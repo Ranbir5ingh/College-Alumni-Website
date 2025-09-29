@@ -36,7 +36,7 @@ const Home = () => {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
 
   return (
-    <div className="min-h-screen mt-16 sm:mt-20 bg-gray-50">
+    <div className="min-h-screen  bg-gray-50">
       {/* Hero Section with Slider */}
       <section className="relative h-[700px] overflow-hidden">
         {slides.map((slide, index) => (

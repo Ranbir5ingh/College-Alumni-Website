@@ -17,7 +17,7 @@ export default function Header() {
       label: "About Us", 
       path: "/about"
     },
-    { label: "Alumni Directory", path: "/alumni-directory" },
+    { label: "Alumni Directory", path: "/directory" },
     { label: "Events", path: "/events" },
     { label: "News & Updates", path: "/news" },
     { label: "Gallery", path: "/gallery" },

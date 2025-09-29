@@ -6,13 +6,13 @@ function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <h2 style={styles.title}>
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 p-5">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-4xl">
+        <div className="px-8 py-6 border-b border-gray-200">
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">
             {isLogin ? "Welcome Back" : "Create Account"}
           </h2>
-          <p style={styles.subtitle}>
+          <p className="text-sm text-gray-600">
             {isLogin
               ? "Login to access your alumni account"
               : "Register to join our alumni network"}
@@ -21,11 +21,11 @@ function AuthPage() {
 
         {isLogin ? <LoginForm /> : <RegisterForm />}
 
-        <div style={styles.footer}>
-          <p style={styles.footerText}>
+        <div className="px-8 py-5 border-t border-gray-200 text-center">
+          <p className="text-sm text-gray-600">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <span
-              style={styles.link}
+              className="text-blue-600 font-semibold cursor-pointer hover:text-blue-700"
               onClick={() => setIsLogin(!isLogin)}
             >
               {isLogin ? "Sign Up" : "Login"}
@@ -36,51 +36,5 @@ function AuthPage() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    minHeight: "100vh",
-    backgroundColor: "#f0f4f8",
-    padding: "20px",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: "12px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    width: "100%",
-    maxWidth: "500px",
-  },
-  header: {
-    padding: "32px 32px 24px",
-    borderBottom: "1px solid #e5e7eb",
-  },
-  title: {
-    fontSize: "28px",
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: "8px",
-  },
-  subtitle: {
-    fontSize: "14px",
-    color: "#6b7280",
-  },
-  footer: {
-    padding: "24px 32px",
-    borderTop: "1px solid #e5e7eb",
-    textAlign: "center",
-  },
-  footerText: {
-    fontSize: "14px",
-    color: "#6b7280",
-  },
-  link: {
-    color: "#2563eb",
-    fontWeight: "600",
-    cursor: "pointer",
-  },
-};
 
 export default AuthPage;

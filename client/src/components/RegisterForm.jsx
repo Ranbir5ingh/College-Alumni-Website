@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { registerAlumni } from "../store/auth-slice";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function RegisterForm() {
   const dispatch = useDispatch();
@@ -29,6 +36,13 @@ function RegisterForm() {
     });
   };
 
+  const handleSelectChange = (name, value) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
   const handleNext = () => {
     setCurrentStep(currentStep + 1);
   };
@@ -47,11 +61,15 @@ function RegisterForm() {
 
   if (success) {
     return (
-      <div style={styles.form}>
-        <div style={styles.successMessage}>
-          <div style={styles.successIcon}>✓</div>
-          <h3 style={styles.successTitle}>Registration Successful!</h3>
-          <p style={styles.successText}>
+      <div className="px-8 py-12">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-green-500 text-white rounded-full flex justify-center items-center text-3xl mx-auto mb-5">
+            ✓
+          </div>
+          <h3 className="text-2xl font-bold text-gray-800 mb-3">
+            Registration Successful!
+          </h3>
+          <p className="text-sm text-gray-600 leading-relaxed max-w-md mx-auto">
             Your registration has been submitted. Please wait for admin
             verification. You will be able to login once your account is
             verified.
@@ -62,217 +80,291 @@ function RegisterForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={styles.form}>
+    <form onSubmit={handleSubmit} className="px-8 py-6">
       {error && (
-        <div style={styles.error}>
+        <div className="bg-red-100 text-red-800 p-3 rounded-md mb-4 text-sm">
           {error.message || "Registration failed. Please try again."}
         </div>
       )}
 
-      <div style={styles.progressBar}>
+      <div className="w-full h-1 bg-gray-200 rounded-sm mb-3 overflow-hidden">
         <div
-          style={{
-            ...styles.progress,
-            width: `${(currentStep / 3) * 100}%`,
-          }}
-        ></div>
+          className="h-full bg-blue-600 transition-all duration-300"
+          style={{ width: `${(currentStep / 3) * 100}%` }}
+        />
       </div>
 
-      <div style={styles.stepIndicator}>
+      <div className="text-sm text-gray-600 font-semibold mb-5 text-center">
         Step {currentStep} of 3
       </div>
 
-      <div style={styles.formContent}>
+      <div className="max-h-[55vh] overflow-y-auto pr-2">
         {currentStep === 1 && (
-          <>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>First Name *</label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                First Name *
+              </label>
               <input
                 type="text"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                style={styles.input}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="Enter your first name"
                 required
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Last Name *</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Last Name *
+              </label>
               <input
                 type="text"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                style={styles.input}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="Enter your last name"
                 required
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email *</label>
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Email *
+              </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                style={styles.input}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="Enter your email"
                 required
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Password *</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Password *
+              </label>
               <input
                 type="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                style={styles.input}
-                placeholder="Create a password (min 6 characters)"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
+                placeholder="Min 6 characters"
                 minLength="6"
                 required
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Phone Number *</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Phone Number *
+              </label>
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                style={styles.input}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="Enter your phone number"
                 required
               />
             </div>
-          </>
+          </div>
         )}
 
         {currentStep === 2 && (
-          <>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Student ID *</label>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Student ID *
+              </label>
               <input
                 type="text"
                 name="studentId"
                 value={formData.studentId}
                 onChange={handleChange}
-                style={styles.input}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="Enter your student ID"
                 required
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Department *</label>
-              <select
-                name="department"
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Department *
+              </label>
+              <Select
                 value={formData.department}
-                onChange={handleChange}
-                style={styles.input}
-                required
+                onValueChange={(value) => handleSelectChange("department", value)}
               >
-                <option value="">Select Department</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Electronics & Communication">
-                  Electronics & Communication
-                </option>
-                <option value="Mechanical Engineering">
-                  Mechanical Engineering
-                </option>
-                <option value="Civil Engineering">Civil Engineering</option>
-                <option value="Electrical Engineering">
-                  Electrical Engineering
-                </option>
-                <option value="Management">Management</option>
-                <option value="Other">Other</option>
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Computer Science">Computer Science</SelectItem>
+                  <SelectItem value="Electronics & Communication">
+                    Electronics & Communication
+                  </SelectItem>
+                  <SelectItem value="Mechanical Engineering">
+                    Mechanical Engineering
+                  </SelectItem>
+                  <SelectItem value="Civil Engineering">Civil Engineering</SelectItem>
+                  <SelectItem value="Electrical Engineering">
+                    Electrical Engineering
+                  </SelectItem>
+                  <SelectItem value="Management">Management</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Degree *</label>
-              <select
-                name="degree"
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Degree *
+              </label>
+              <Select
                 value={formData.degree}
-                onChange={handleChange}
-                style={styles.input}
-                required
+                onValueChange={(value) => handleSelectChange("degree", value)}
               >
-                <option value="">Select Degree</option>
-                <option value="B.Tech">B.Tech</option>
-                <option value="M.Tech">M.Tech</option>
-                <option value="MBA">MBA</option>
-                <option value="PhD">PhD</option>
-                <option value="B.Sc">B.Sc</option>
-                <option value="M.Sc">M.Sc</option>
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Degree" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="B.Tech">B.Tech</SelectItem>
+                  <SelectItem value="M.Tech">M.Tech</SelectItem>
+                  <SelectItem value="MBA">MBA</SelectItem>
+                  <SelectItem value="PhD">PhD</SelectItem>
+                  <SelectItem value="B.Sc">B.Sc</SelectItem>
+                  <SelectItem value="M.Sc">M.Sc</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Batch *</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Batch *
+              </label>
               <input
                 type="text"
                 name="batch"
                 value={formData.batch}
                 onChange={handleChange}
-                style={styles.input}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="e.g., 2018-2022"
                 required
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Graduation Year *</label>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Graduation Year *
+              </label>
               <input
                 type="number"
                 name="graduationYear"
                 value={formData.graduationYear}
                 onChange={handleChange}
-                style={styles.input}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="e.g., 2022"
                 min="1950"
                 max="2030"
                 required
               />
             </div>
-          </>
+          </div>
         )}
 
         {currentStep === 3 && (
-          <div style={styles.reviewSection}>
-            <h3 style={styles.reviewTitle}>Review Your Information</h3>
-            <div style={styles.reviewGrid}>
-              <div style={styles.reviewItem}>
-                <span style={styles.reviewLabel}>Degree:</span>
-                <span style={styles.reviewValue}>{formData.degree}</span>
+          <div>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">
+              Review Your Information
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Name:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.firstName} {formData.lastName}
+                </span>
               </div>
-              <div style={styles.reviewItem}>
-                <span style={styles.reviewLabel}>Batch:</span>
-                <span style={styles.reviewValue}>{formData.batch}</span>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Email:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.email}
+                </span>
               </div>
-              <div style={styles.reviewItem}>
-                <span style={styles.reviewLabel}>Graduation Year:</span>
-                <span style={styles.reviewValue}>{formData.graduationYear}</span>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Student ID:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.studentId}
+                </span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Phone:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.phone}
+                </span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Department:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.department}
+                </span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Degree:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.degree}
+                </span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Batch:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.batch}
+                </span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Graduation Year:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.graduationYear}
+                </span>
               </div>
             </div>
-            <p style={styles.reviewNote}>
+            <p className="text-xs text-gray-600 mt-3 p-2.5 bg-blue-50 rounded-md border-l-4 border-blue-600">
               Please review your information carefully. You can complete your profile after registration.
             </p>
           </div>
         )}
       </div>
 
-      <div style={styles.buttonGroup}>
+      <div className="flex gap-3 mt-5">
         {currentStep > 1 && (
           <button
             type="button"
             onClick={handlePrevious}
-            style={styles.buttonSecondary}
+            className="flex-1 bg-gray-100 text-gray-700 py-2.5 text-base font-semibold border-0 rounded-md cursor-pointer transition-colors hover:bg-gray-200"
           >
             Previous
           </button>
@@ -282,17 +374,18 @@ function RegisterForm() {
           <button
             type="button"
             onClick={handleNext}
-            style={styles.buttonPrimary}
+            className="flex-1 bg-blue-600 text-white py-2.5 text-base font-semibold border-0 rounded-md cursor-pointer transition-colors hover:bg-blue-700"
           >
             Next
           </button>
         ) : (
           <button
             type="submit"
-            style={{
-              ...styles.buttonPrimary,
-              ...(isLoading ? styles.buttonDisabled : {}),
-            }}
+            className={`flex-1 py-2.5 text-base font-semibold border-0 rounded-md transition-colors ${
+              isLoading
+                ? "bg-blue-300 cursor-not-allowed"
+                : "bg-blue-600 text-white cursor-pointer hover:bg-blue-700"
+            }`}
             disabled={isLoading}
           >
             {isLoading ? "Registering..." : "Register"}
@@ -302,163 +395,5 @@ function RegisterForm() {
     </form>
   );
 }
-
-const styles = {
-  form: {
-    padding: "32px",
-  },
-  progressBar: {
-    width: "100%",
-    height: "4px",
-    backgroundColor: "#e5e7eb",
-    borderRadius: "2px",
-    marginBottom: "16px",
-    overflow: "hidden",
-  },
-  progress: {
-    height: "100%",
-    backgroundColor: "#2563eb",
-    transition: "width 0.3s ease",
-  },
-  stepIndicator: {
-    fontSize: "14px",
-    color: "#6b7280",
-    fontWeight: "600",
-    marginBottom: "24px",
-    textAlign: "center",
-  },
-  formContent: {
-    minHeight: "60vh",
-    maxHeight: "60vh",
-    overflowY: "auto",
-    paddingRight: "8px",
-  },
-  formGroup: {
-    marginBottom: "20px",
-  },
-  label: {
-    display: "block",
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: "8px",
-  },
-  input: {
-    width: "100%",
-    padding: "12px",
-    fontSize: "14px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    outline: "none",
-    transition: "border-color 0.2s",
-  },
-  buttonGroup: {
-    display: "flex",
-    gap: "12px",
-    marginTop: "24px",
-  },
-  buttonPrimary: {
-    flex: 1,
-    backgroundColor: "#2563eb",
-    color: "white",
-    padding: "12px",
-    fontSize: "16px",
-    fontWeight: "600",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    transition: "background-color 0.2s",
-  },
-  buttonSecondary: {
-    flex: 1,
-    backgroundColor: "#f3f4f6",
-    color: "#374151",
-    padding: "12px",
-    fontSize: "16px",
-    fontWeight: "600",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    transition: "background-color 0.2s",
-  },
-  buttonDisabled: {
-    backgroundColor: "#93c5fd",
-    cursor: "not-allowed",
-  },
-  error: {
-    backgroundColor: "#fee2e2",
-    color: "#991b1b",
-    padding: "12px",
-    borderRadius: "6px",
-    marginBottom: "24px",
-    fontSize: "14px",
-  },
-  reviewSection: {
-    padding: "16px",
-  },
-  reviewTitle: {
-    fontSize: "18px",
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: "20px",
-  },
-  reviewGrid: {
-    display: "grid",
-    gap: "16px",
-  },
-  reviewItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "12px",
-    backgroundColor: "#f9fafb",
-    borderRadius: "6px",
-  },
-  reviewLabel: {
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#6b7280",
-  },
-  reviewValue: {
-    fontSize: "14px",
-    color: "#1f2937",
-    fontWeight: "500",
-  },
-  reviewNote: {
-    fontSize: "13px",
-    color: "#6b7280",
-    marginTop: "16px",
-    padding: "12px",
-    backgroundColor: "#eff6ff",
-    borderRadius: "6px",
-    borderLeft: "3px solid #2563eb",
-  },
-  successMessage: {
-    textAlign: "center",
-    padding: "40px 20px",
-  },
-  successIcon: {
-    width: "60px",
-    height: "60px",
-    backgroundColor: "#10b981",
-    color: "white",
-    borderRadius: "50%",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    fontSize: "32px",
-    margin: "0 auto 20px",
-  },
-  successTitle: {
-    fontSize: "22px",
-    fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: "12px",
-  },
-  successText: {
-    fontSize: "14px",
-    color: "#6b7280",
-    lineHeight: "1.6",
-  },
-};
 
 export default RegisterForm;
