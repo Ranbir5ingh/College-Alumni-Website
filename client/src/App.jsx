@@ -14,7 +14,9 @@ import Events from "./pages/Events";
 import News from "./pages/News";
 import Gallery from "./pages/Gallery";
 import Careers from "./pages/Careers";
-import { Contact } from "lucide-react";
+
+import GiveBack from "./pages/giveback";
+import ContactPage from "./pages/Contact";
 
 function App() {
   const dispatch = useDispatch();
@@ -66,7 +68,9 @@ function App() {
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/careers" element={<Careers />} />
         
-            <Route path="/contact" element={<Contact />} />
+            <Route path="/GiveBack" element={<GiveBack />} />
+        
+            <Route path="/contact" element={<ContactPage />} />
            
           {/* Auth path: If authenticated, redirect to dashboard, else show AuthPage */}
           <Route

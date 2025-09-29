@@ -15,19 +15,14 @@ export default function Header() {
     { label: "Home", path: "/" },
     { 
       label: "About Us", 
-      path: "/about",
-      dropdown: [
-        { label: "Mission & Vision", path: "/about/mission" },
-        { label: "Alumni Committee", path: "/about/committee" },
-        { label: "College History", path: "/about/history" }
-      ]
+      path: "/about"
     },
     { label: "Alumni Directory", path: "/alumni-directory" },
     { label: "Events", path: "/events" },
     { label: "News & Updates", path: "/news" },
     { label: "Gallery", path: "/gallery" },
     { label: "Careers", path: "/careers" },
-    { label: "Give Back", path: "/give-back" },
+    { label: "Give Back", path: "/giveback" },
     { label: "Contact Us", path: "/contact" },
   ];
 
