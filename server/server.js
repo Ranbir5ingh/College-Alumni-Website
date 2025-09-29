@@ -4,10 +4,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-// const authRouter = require("./routes/auth/auth-routes");
 
+// Import routes
+const authRouter = require("./routes/auth/auth-routes");
+const adminAlumniRouter = require("./routes/admin/alumni-routes.js");
 
-
+// Create database connection
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log("MongoDB connected"))
@@ -31,15 +33,11 @@ app.use(
   })
 );
 
-const openCors = cors(); 
-
 app.use(cookieParser());
 app.use(express.json());
-// app.use("/api/auth", authRouter);
 
-
-app.get("/api/ping", openCors, (req, res) => {
-  res.status(200).json({ message: "pong" });
-});
+// Routes
+app.use("/api/auth", authRouter);
+app.use("/api/admin/alumni", adminAlumniRouter);
 
 app.listen(PORT, () => console.log(`Server is now running on port ${PORT}`));
