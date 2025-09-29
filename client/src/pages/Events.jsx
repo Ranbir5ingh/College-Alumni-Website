@@ -64,109 +64,119 @@ const Events = () => {
   ]
 
   return (
-    <div className="min-h-screen py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-toboggan-bold text-foreground mb-6">Events</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Events</h1>
+          <p className="text-lg text-gray-600 max-w-2xl">
             Stay connected through our alumni events, workshops, and networking opportunities.
           </p>
         </div>
+      </div>
 
+      <div className="max-w-6xl mx-auto px-6 py-12">
         {/* Tab Navigation */}
-        <div className="flex justify-center mb-12">
-          <div className="bg-muted rounded-lg p-1">
-            <button
-              onClick={() => setActiveTab("upcoming")}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                activeTab === "upcoming"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Upcoming Events
-            </button>
-            <button
-              onClick={() => setActiveTab("past")}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                activeTab === "past"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Past Events
-            </button>
+        <div className="mb-10">
+          <div className="border-b border-gray-200">
+            <div className="flex gap-8">
+              <button
+                onClick={() => setActiveTab("upcoming")}
+                className={`pb-4 px-1 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === "upcoming"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                }`}
+              >
+                Upcoming Events
+              </button>
+              <button
+                onClick={() => setActiveTab("past")}
+                className={`pb-4 px-1 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === "past"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                }`}
+              >
+                Past Events
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Upcoming Events */}
         {activeTab === "upcoming" && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {upcomingEvents.map((event) => (
               <div
                 key={event.id}
-                className={`bg-card rounded-lg shadow-sm border border-border overflow-hidden ${
-                  event.featured ? "ring-2 ring-primary/20" : ""
-                }`}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
               >
                 {event.featured && (
-                  <div className="bg-primary text-primary-foreground px-4 py-2 text-sm font-medium">Featured Event</div>
+                  <div className="bg-blue-600 text-white px-6 py-2 text-sm font-medium">
+                    Featured Event
+                  </div>
                 )}
                 <div className="p-6">
-                  <div className="grid lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-2xl font-toboggan-bold text-foreground mb-2">{event.title}</h3>
-                          <span className="inline-block bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                            {event.title}
+                          </h3>
+                          <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium">
                             {event.category}
                           </span>
                         </div>
                       </div>
 
-                      <p className="text-muted-foreground mb-6 leading-relaxed">{event.description}</p>
+                      <p className="text-gray-600 mb-5 leading-relaxed">
+                        {event.description}
+                      </p>
 
                       {event.speaker && (
-                        <p className="text-sm text-foreground mb-4">
-                          <strong>Speaker:</strong> {event.speaker}
+                        <p className="text-sm text-gray-700 mb-5">
+                          <span className="font-medium">Speaker:</span> {event.speaker}
                         </p>
                       )}
 
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-2" />
-                          {new Date(event.date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>
+                            {new Date(event.date).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
                         </div>
-                        <div className="flex items-center">
-                          <Clock className="h-4 w-4 mr-2" />
-                          {event.time}
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-400" />
+                          <span>{event.time}</span>
                         </div>
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          {event.location}
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 text-gray-400" />
+                          <span>{event.location}</span>
                         </div>
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-2" />
-                          {event.attendees} registered
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-gray-400" />
+                          <span>{event.attendees} registered</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col justify-center space-y-4">
-                      <button className="w-full bg-primary text-primary-foreground py-3 px-6 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                    <div className="flex flex-col gap-3 lg:w-48">
+                      <button className="w-full bg-blue-600 text-white py-2.5 px-5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                         Register Now
                       </button>
-                      <button className="w-full border border-border text-foreground py-3 px-6 rounded-lg font-medium hover:bg-muted transition-colors">
+                      <button className="w-full border border-gray-300 text-gray-700 py-2.5 px-5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
                         Add to Calendar
                       </button>
-                      <button className="w-full text-primary hover:text-primary/80 font-medium flex items-center justify-center">
+                      <button className="w-full text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center justify-center gap-1 py-2">
                         Share Event
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        <ArrowRight className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
@@ -178,34 +188,43 @@ const Events = () => {
 
         {/* Past Events */}
         {activeTab === "past" && (
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-6">
             {pastEvents.map((event) => (
-              <div key={event.id} className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                <h3 className="text-xl font-toboggan-bold text-foreground mb-3">{event.title}</h3>
-                <p className="text-muted-foreground mb-4 leading-relaxed">{event.description}</p>
-                <div className="space-y-2 text-sm text-muted-foreground mb-6">
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    {new Date(event.date).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+              <div
+                key={event.id}
+                className="bg-white rounded-lg p-6 border border-gray-200 hover:border-gray-300 transition-colors"
+              >
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  {event.title}
+                </h3>
+                <p className="text-gray-600 mb-5 leading-relaxed">
+                  {event.description}
+                </p>
+                <div className="space-y-2 text-sm text-gray-600 mb-6">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-400" />
+                    <span>
+                      {new Date(event.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
                   </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    {event.location}
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-gray-400" />
+                    <span>{event.location}</span>
                   </div>
-                  <div className="flex items-center">
-                    <Users className="h-4 w-4 mr-2" />
-                    {event.attendees} attendees
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-gray-400" />
+                    <span>{event.attendees} attendees</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
-                  <button className="flex-1 bg-primary text-primary-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
+                  <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                     View Photos ({event.photos})
                   </button>
-                  <button className="flex-1 border border-border text-foreground py-2 px-4 rounded-lg text-sm font-medium hover:bg-muted transition-colors">
+                  <button className="flex-1 border border-gray-300 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
                     Event Report
                   </button>
                 </div>
