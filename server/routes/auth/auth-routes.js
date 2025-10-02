@@ -2,6 +2,8 @@ const express = require("express");
 
 const {
   registerAlumni,
+  completeProfile,
+  requestVerification,
   loginAlumni,
   logoutAlumni,
   authMiddleware,
@@ -22,7 +24,9 @@ router.get("/check-auth", authMiddleware, async (req, res) => {
   try {
     // Fetch full user data
     const Alumni = require("../../models/Alumni");
-    const user = await Alumni.findById(req.user.id).select("-password");
+    const user = await Alumni.findById(req.user.id)
+      .select("-password")
+      .populate("currentMembership.membershipId", "name tier");
     
     if (!user) {
       return res.status(404).json({
@@ -40,15 +44,21 @@ router.get("/check-auth", authMiddleware, async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
+        accountStatus: user.accountStatus,
         isVerified: user.isVerified,
-        membershipStatus: user.membershipStatus,
+        isProfileComplete: user.isProfileComplete,
         alumniId: user.alumniId,
         batch: user.batch,
         department: user.department,
         degree: user.degree,
-        graduationYear: user.graduationYear,
+        yearOfPassing: user.yearOfPassing,
+        yearOfJoining: user.yearOfJoining,
         phone: user.phone,
-        studentId: user.studentId,
+        enrollmentNumber: user.enrollmentNumber,
+        canPostJobs: user.canPostJobs,
+        canMentor: user.canMentor,
+        currentMembership: user.currentMembership,
+        hasActiveMembership: user.hasActiveMembership,
       },
     });
   } catch (error) {
@@ -64,6 +74,8 @@ router.get("/profile", authMiddleware, getAlumniProfile);
 router.put("/profile/:id", authMiddleware, updateAlumniProfile);
 router.put("/change-password", authMiddleware, changePassword);
 
-
+// New routes for profile completion and verification
+router.put("/complete-profile", authMiddleware, completeProfile);
+router.post("/request-verification", authMiddleware, requestVerification);
 
 module.exports = router;

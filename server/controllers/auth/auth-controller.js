@@ -85,73 +85,100 @@ const registerAlumni = async (req, res) => {
 
 // Complete Profile (After basic registration)
 const completeProfile = async (req, res) => {
-  try {
-    const { id } = req.user;
-    const {
-      phone,
-      secondaryPhone,
-      gender,
-      dateOfBirth,
-      address,
-      currentCompany,
-      currentDesignation,
-      industry,
-      skills,
-      linkedInProfile,
-      profilePicture,
-      bio,
-      secondaryEmail,
-    } = req.body;
+  try {
+    const { id } = req.user;
+    const {
+      phone,
+      secondaryPhone,
+      gender,
+      dateOfBirth,
+      address,
+      currentCompany,
+      currentDesignation,
+      industry,
+      skills,
+      linkedInProfile,
+      profilePicture,
+      bio,
+      secondaryEmail,
+    } = req.body;
+    console.log(req.body);
 
-    const alumni = await Alumni.findById(id);
+    const alumni = await Alumni.findById(id);
+    
+    if (!alumni) {
+      return res.status(404).json({
+        success: false,
+        message: "Alumni not found!",
+      });
+    }
+
+    // Check if completion is allowed (only from incomplete_profile)
+    if (alumni.accountStatus !== "incomplete_profile") {
+      return res.status(400).json({
+        success: false,
+        message: "Profile is already completed or verification is underway!",
+      });
+    }
+
+    // Update profile fields
+    // NOTE: Using direct assignment assumes the frontend sends the required data for completion.
+    alumni.phone = phone;
+    alumni.secondaryPhone = secondaryPhone;
+    alumni.gender = gender;
+    alumni.dateOfBirth = dateOfBirth;
+    alumni.address = address;
+    alumni.currentCompany = currentCompany;
+    alumni.currentDesignation = currentDesignation;
+    alumni.industry = industry;
+    alumni.skills = skills;
+    alumni.linkedInProfile = linkedInProfile;
+    alumni.profilePicture = profilePicture;
+    alumni.bio = bio;
+    alumni.secondaryEmail = secondaryEmail;
+
+    // Save the changes first so the virtual 'isProfileComplete' is calculated
+    await alumni.save();
+
+    // Re-fetch or check the current state to access the virtual field accurately
+    // The previous save() *should* update virtuals, but a quick re-fetch ensures accuracy, 
+    // or you can just check the newly saved object. We'll use the saved object.
     
-    if (!alumni) {
-      return res.status(404).json({
-        success: false,
-        message: "Alumni not found!",
-      });
+    // --- CRITICAL FIX: Check completeness and update status ---
+    if (alumni.isProfileComplete) {
+        // If the profile is fully complete (based on the virtual check)
+        // change the status directly to 'pending_verification' as requested.
+        alumni.accountStatus = "pending_verification"; 
+        
+        // Save again to persist the status change
+        await alumni.save(); 
+        
+        // Ensure the response is sent with the updated status
+        res.status(200).json({
+            success: true,
+            message: "Profile completed and verification requested successfully!",
+            // Return the entire updated user object to the frontend auth slice
+            data: alumni.toObject({ virtuals: true }), 
+        });
+        return; // End the function call
     }
+    // -----------------------------------------------------------
 
-    if (alumni.accountStatus !== "incomplete_profile") {
-      return res.status(400).json({
-        success: false,
-        message: "Profile completion not allowed at this stage!",
-      });
-    }
+    // If the profile is NOT complete after the initial save, 
+    // the status remains 'incomplete_profile', and we return a message.
+    res.status(200).json({
+      success: true,
+      message: "Profile details updated, but required fields are still missing. Please complete your profile.",
+      data: alumni.toObject({ virtuals: true }), 
+    });
 
-    // Update profile fields
-    if (phone) alumni.phone = phone;
-    if (secondaryPhone) alumni.secondaryPhone = secondaryPhone;
-    if (gender) alumni.gender = gender;
-    if (dateOfBirth) alumni.dateOfBirth = dateOfBirth;
-    if (address) alumni.address = address;
-    if (currentCompany) alumni.currentCompany = currentCompany;
-    if (currentDesignation) alumni.currentDesignation = currentDesignation;
-    if (industry) alumni.industry = industry;
-    if (skills) alumni.skills = skills;
-    if (linkedInProfile) alumni.linkedInProfile = linkedInProfile;
-    if (profilePicture) alumni.profilePicture = profilePicture;
-    if (bio) alumni.bio = bio;
-    if (secondaryEmail) alumni.secondaryEmail = secondaryEmail;
-
-    await alumni.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Profile updated successfully!",
-      data: {
-        id: alumni._id,
-        isProfileComplete: alumni.isProfileComplete,
-        accountStatus: alumni.accountStatus,
-      },
-    });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
-  }
+  } catch (e) {
+    console.error("Error in completeProfile:", e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred while completing the profile.",
+    });
+  }
 };
 
 // Request Verification (After completing profile)

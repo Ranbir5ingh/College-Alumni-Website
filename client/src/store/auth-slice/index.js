@@ -28,31 +28,12 @@ export const registerAlumni = createAsyncThunk(
   }
 );
 
-// Login Alumni
-export const loginAlumni = createAsyncThunk(
-  "auth/login",
-  async (formData, { rejectWithValue }) => {
-    try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        formData,
-        { withCredentials: true }
-      );
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: "Login failed" }
-      );
-    }
-  }
-);
-
 // Complete Profile
 export const completeProfile = createAsyncThunk(
   "auth/completeProfile",
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
+      const response = await axios.put(
         "http://localhost:5000/api/auth/complete-profile",
         formData,
         { withCredentials: true }
@@ -80,6 +61,25 @@ export const requestVerification = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "Failed to request verification" }
+      );
+    }
+  }
+);
+
+// Login Alumni
+export const loginAlumni = createAsyncThunk(
+  "auth/login",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        formData,
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Login failed" }
       );
     }
   }
@@ -140,8 +140,8 @@ export const getAlumniProfile = createAsyncThunk(
   }
 );
 
-// Update Alumni Profile
-export const updateAlumniProfile = createAsyncThunk(
+// Update Profile
+export const updateProfile = createAsyncThunk(
   "auth/updateProfile",
   async ({ id, formData }, { rejectWithValue }) => {
     try {
@@ -178,29 +178,12 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(registerAlumni.fulfilled, (state, action) => {
+      .addCase(registerAlumni.fulfilled, (state) => {
         state.isLoading = false;
         state.error = null;
       })
       .addCase(registerAlumni.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
-      })
-      // Login
-      .addCase(loginAlumni.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(loginAlumni.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.error = null;
-      })
-      .addCase(loginAlumni.rejected, (state, action) => {
-        state.isLoading = false;
-        state.isAuthenticated = false;
-        state.user = null;
         state.error = action.payload;
       })
       // Complete Profile
@@ -233,6 +216,23 @@ const authSlice = createSlice({
       })
       .addCase(requestVerification.rejected, (state, action) => {
         state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Login
+      .addCase(loginAlumni.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loginAlumni.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.error = null;
+      })
+      .addCase(loginAlumni.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = false;
+        state.user = null;
         state.error = action.payload;
       })
       // Check Auth
@@ -269,16 +269,16 @@ const authSlice = createSlice({
         state.error = action.payload;
       })
       // Update Profile
-      .addCase(updateAlumniProfile.pending, (state) => {
+      .addCase(updateProfile.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(updateAlumniProfile.fulfilled, (state, action) => {
+      .addCase(updateProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload.data;
         state.error = null;
       })
-      .addCase(updateAlumniProfile.rejected, (state, action) => {
+      .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

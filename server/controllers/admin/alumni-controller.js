@@ -1,4 +1,5 @@
 const Alumni = require("../../models/Alumni");
+const { imageUploadUtil } = require("../../helpers/cloudinary");
 
 // Get all alumni (Admin only)
 const getAllAlumni = async (req, res) => {
@@ -486,6 +487,19 @@ const exportAlumniData = async (req, res) => {
   }
 };
 
+const handleImageUpload = async (req, res) => {
+  try {
+    const b64 = Buffer.from(req.file.buffer).toString("base64");
+    const url = "data:" + req.file.mimetype + ";base64," + b64;
+    const result = await imageUploadUtil(url);
+
+    res.json({ success: true, result });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error occurred during image upload" });
+  }
+};
+
 module.exports = {
   getAllAlumni,
   getAlumniById,
@@ -496,4 +510,5 @@ module.exports = {
   getAlumniStats,
   getPendingVerifications,
   exportAlumniData,
+  handleImageUpload
 };
