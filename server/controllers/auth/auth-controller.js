@@ -2,20 +2,21 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Alumni = require("../../models/Alumni");
 
-// Register Alumni
+// Register Alumni (Basic Registration)
 const registerAlumni = async (req, res) => {
   try {
     const {
       firstName,
+      middleName,
       lastName,
       email,
       password,
-      studentId,
+      enrollmentNumber,
       batch,
-      graduationYear,
+      yearOfJoining,
+      yearOfPassing,
       department,
       degree,
-      phone,
     } = req.body;
 
     // Check if alumni already exists
@@ -27,12 +28,12 @@ const registerAlumni = async (req, res) => {
       });
     }
 
-    // Check if student ID already exists
-    const existingStudentId = await Alumni.findOne({ studentId });
-    if (existingStudentId) {
+    // Check if enrollment number already exists
+    const existingEnrollment = await Alumni.findOne({ enrollmentNumber });
+    if (existingEnrollment) {
       return res.status(400).json({
         success: false,
-        message: "Alumni already exists with this student ID!",
+        message: "Alumni already exists with this enrollment number!",
       });
     }
 
@@ -41,31 +42,169 @@ const registerAlumni = async (req, res) => {
 
     // Generate verification token
     const verificationToken = jwt.sign(
-      { email, studentId },
+      { email, enrollmentNumber },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // Create new alumni
+    // Create new alumni with basic info only
     const newAlumni = new Alumni({
       firstName,
+      middleName,
       lastName,
       email,
       password: hashPassword,
-      studentId,
+      enrollmentNumber,
       batch,
-      graduationYear,
+      yearOfJoining,
+      yearOfPassing,
       department,
       degree,
-      phone,
       verificationToken,
+      accountStatus: "incomplete_profile",
     });
 
     await newAlumni.save();
 
     res.status(201).json({
       success: true,
-      message: "Alumni registration successful! Please wait for admin verification.",
+      message: "Registration successful! Please complete your profile.",
+      data: {
+        id: newAlumni._id,
+        accountStatus: newAlumni.accountStatus,
+      },
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred!",
+    });
+  }
+};
+
+// Complete Profile (After basic registration)
+const completeProfile = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const {
+      phone,
+      secondaryPhone,
+      gender,
+      dateOfBirth,
+      address,
+      currentCompany,
+      currentDesignation,
+      industry,
+      skills,
+      linkedInProfile,
+      profilePicture,
+      bio,
+      secondaryEmail,
+    } = req.body;
+
+    const alumni = await Alumni.findById(id);
+    
+    if (!alumni) {
+      return res.status(404).json({
+        success: false,
+        message: "Alumni not found!",
+      });
+    }
+
+    if (alumni.accountStatus !== "incomplete_profile") {
+      return res.status(400).json({
+        success: false,
+        message: "Profile completion not allowed at this stage!",
+      });
+    }
+
+    // Update profile fields
+    if (phone) alumni.phone = phone;
+    if (secondaryPhone) alumni.secondaryPhone = secondaryPhone;
+    if (gender) alumni.gender = gender;
+    if (dateOfBirth) alumni.dateOfBirth = dateOfBirth;
+    if (address) alumni.address = address;
+    if (currentCompany) alumni.currentCompany = currentCompany;
+    if (currentDesignation) alumni.currentDesignation = currentDesignation;
+    if (industry) alumni.industry = industry;
+    if (skills) alumni.skills = skills;
+    if (linkedInProfile) alumni.linkedInProfile = linkedInProfile;
+    if (profilePicture) alumni.profilePicture = profilePicture;
+    if (bio) alumni.bio = bio;
+    if (secondaryEmail) alumni.secondaryEmail = secondaryEmail;
+
+    await alumni.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully!",
+      data: {
+        id: alumni._id,
+        isProfileComplete: alumni.isProfileComplete,
+        accountStatus: alumni.accountStatus,
+      },
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred!",
+    });
+  }
+};
+
+// Request Verification (After completing profile)
+const requestVerification = async (req, res) => {
+  try {
+    const { id } = req.user;
+
+    const alumni = await Alumni.findById(id);
+    
+    if (!alumni) {
+      return res.status(404).json({
+        success: false,
+        message: "Alumni not found!",
+      });
+    }
+
+    if (alumni.accountStatus !== "incomplete_profile") {
+      return res.status(400).json({
+        success: false,
+        message: "Verification already requested or account is verified!",
+      });
+    }
+
+    // Check if profile is complete using virtual
+    if (!alumni.isProfileComplete) {
+      return res.status(400).json({
+        success: false,
+        message: "Please complete your profile before requesting verification!",
+        missingFields: [
+          !alumni.phone && "phone",
+          !alumni.gender && "gender",
+          !alumni.dateOfBirth && "dateOfBirth",
+          !alumni.currentCompany && "currentCompany",
+          !alumni.currentDesignation && "currentDesignation",
+          !alumni.industry && "industry",
+          !alumni.address?.city && "address.city",
+          !alumni.address?.country && "address.country",
+        ].filter(Boolean),
+      });
+    }
+
+    // Update status to pending verification
+    alumni.accountStatus = "pending_verification";
+    await alumni.save();
+
+    // TODO: Send email notification to admin about new verification request
+
+    res.status(200).json({
+      success: true,
+      message: "Verification request submitted successfully! Please wait for admin approval.",
+      data: {
+        accountStatus: alumni.accountStatus,
+      },
     });
   } catch (e) {
     console.log(e);
@@ -81,7 +220,7 @@ const loginAlumni = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const checkAlumni = await Alumni.findOne({ email });
+    const checkAlumni = await Alumni.findOne({ email }).select("+password");
     if (!checkAlumni) {
       return res.status(404).json({
         success: false,
@@ -93,6 +232,13 @@ const loginAlumni = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Your account has been deactivated. Please contact admin.",
+      });
+    }
+
+    if (checkAlumni.accountStatus === "rejected") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been rejected. Please contact admin.",
       });
     }
 
@@ -116,7 +262,7 @@ const loginAlumni = async (req, res) => {
         id: checkAlumni._id,
         role: checkAlumni.role,
         email: checkAlumni.email,
-        isVerified: checkAlumni.isVerified,
+        accountStatus: checkAlumni.accountStatus,
       },
       process.env.JWT_SECRET,
       { expiresIn: "60m" }
@@ -131,15 +277,18 @@ const loginAlumni = async (req, res) => {
         id: checkAlumni._id,
         firstName: checkAlumni.firstName,
         lastName: checkAlumni.lastName,
+        accountStatus: checkAlumni.accountStatus,
         isVerified: checkAlumni.isVerified,
-        membershipStatus: checkAlumni.membershipStatus,
+        isProfileComplete: checkAlumni.isProfileComplete,
         alumniId: checkAlumni.alumniId,
         batch: checkAlumni.batch,
         department: checkAlumni.department,
         degree: checkAlumni.degree,
-        graduationYear: checkAlumni.graduationYear,
+        yearOfPassing: checkAlumni.yearOfPassing,
         phone: checkAlumni.phone,
-        studentId: checkAlumni.studentId,
+        enrollmentNumber: checkAlumni.enrollmentNumber,
+        canPostJobs: checkAlumni.canPostJobs,
+        canMentor: checkAlumni.canMentor,
       },
     });
   } catch (e) {
@@ -159,7 +308,7 @@ const logoutAlumni = (req, res) => {
   });
 };
 
-// Get Current User
+// Auth Middleware
 const authMiddleware = async (req, res, next) => {
   const token = req.cookies.token;
   if (!token) {
@@ -184,7 +333,10 @@ const authMiddleware = async (req, res, next) => {
 // Get Alumni Profile
 const getAlumniProfile = async (req, res) => {
   try {
-    const alumni = await Alumni.findById(req.user.id).select("-password");
+    const alumni = await Alumni.findById(req.user.id)
+      .select("-password")
+      .populate("currentMembership.membershipId", "name tier features");
+    
     if (!alumni) {
       return res.status(404).json({
         success: false,
@@ -194,7 +346,12 @@ const getAlumniProfile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: alumni,
+      data: {
+        ...alumni.toObject(),
+        isProfileComplete: alumni.isProfileComplete,
+        isVerified: alumni.isVerified,
+        hasActiveMembership: alumni.hasActiveMembership,
+      },
     });
   } catch (e) {
     console.log(e);
@@ -211,7 +368,7 @@ const updateAlumniProfile = async (req, res) => {
     const { id } = req.params;
     
     // Check if user is updating their own profile or is admin
-    if (req.user.id !== id && req.user.role !== "admin") {
+    if (req.user.id !== id && req.user.role !== "admin" && req.user.role !== "super_admin") {
       return res.status(403).json({
         success: false,
         message: "You can only update your own profile!",
@@ -219,10 +376,28 @@ const updateAlumniProfile = async (req, res) => {
     }
 
     // Remove sensitive fields that shouldn't be updated directly
-    const { password, email, studentId, isVerified, role, alumniId, ...updateData } = req.body;
+    const { 
+      password, 
+      email, 
+      enrollmentNumber, 
+      accountStatus,
+      role, 
+      alumniId, 
+      canPostJobs,
+      canMentor,
+      isActive,
+      verificationToken,
+      verifiedAt,
+      currentMembership,
+      membershipHistory,
+      eventRegistrations,
+      donations,
+      ...updateData 
+    } = req.body;
 
     const updatedAlumni = await Alumni.findByIdAndUpdate(id, updateData, {
       new: true,
+      runValidators: true,
     }).select("-password");
 
     if (!updatedAlumni) {
@@ -235,7 +410,10 @@ const updateAlumniProfile = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Profile updated successfully!",
-      data: updatedAlumni,
+      data: {
+        ...updatedAlumni.toObject(),
+        isProfileComplete: updatedAlumni.isProfileComplete,
+      },
     });
   } catch (e) {
     console.log(e);
@@ -252,7 +430,7 @@ const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id);
+    const alumni = await Alumni.findById(id).select("+password");
     if (!alumni) {
       return res.status(404).json({
         success: false,
@@ -277,7 +455,8 @@ const changePassword = async (req, res) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
     // Update password
-    await Alumni.findByIdAndUpdate(id, { password: hashedNewPassword });
+    alumni.password = hashedNewPassword;
+    await alumni.save();
 
     res.status(200).json({
       success: true,
@@ -292,53 +471,14 @@ const changePassword = async (req, res) => {
   }
 };
 
-// Verify Alumni (Admin only)
-const verifyAlumni = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { isVerified, membershipStatus } = req.body;
-
-    if (req.user.role !== "admin" && req.user.role !== "committee") {
-      return res.status(403).json({
-        success: false,
-        message: "Only admin can verify alumni!",
-      });
-    }
-
-    const alumni = await Alumni.findByIdAndUpdate(
-      id,
-      { isVerified, membershipStatus },
-      { new: true }
-    ).select("-password");
-
-    if (!alumni) {
-      return res.status(404).json({
-        success: false,
-        message: "Alumni not found!",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Alumni verification status updated successfully!",
-      data: alumni,
-    });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({
-      success: false,
-      message: "Some error occurred!",
-    });
-  }
-};
-
 module.exports = {
   registerAlumni,
+  completeProfile,
+  requestVerification,
   loginAlumni,
   logoutAlumni,
   authMiddleware,
   getAlumniProfile,
   updateAlumniProfile,
   changePassword,
-  verifyAlumni,
 };

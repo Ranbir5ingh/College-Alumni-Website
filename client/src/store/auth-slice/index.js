@@ -47,6 +47,44 @@ export const loginAlumni = createAsyncThunk(
   }
 );
 
+// Complete Profile
+export const completeProfile = createAsyncThunk(
+  "auth/completeProfile",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/complete-profile",
+        formData,
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to complete profile" }
+      );
+    }
+  }
+);
+
+// Request Verification
+export const requestVerification = createAsyncThunk(
+  "auth/requestVerification",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/request-verification",
+        {},
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to request verification" }
+      );
+    }
+  }
+);
+
 // Check Auth
 export const checkAuth = createAsyncThunk(
   "auth/checkAuth",
@@ -102,6 +140,25 @@ export const getAlumniProfile = createAsyncThunk(
   }
 );
 
+// Update Alumni Profile
+export const updateAlumniProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async ({ id, formData }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/auth/profile/${id}`,
+        formData,
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to update profile" }
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -146,6 +203,38 @@ const authSlice = createSlice({
         state.user = null;
         state.error = action.payload;
       })
+      // Complete Profile
+      .addCase(completeProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(completeProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (state.user) {
+          state.user = { ...state.user, ...action.payload.data };
+        }
+        state.error = null;
+      })
+      .addCase(completeProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Request Verification
+      .addCase(requestVerification.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(requestVerification.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (state.user) {
+          state.user.accountStatus = action.payload.data.accountStatus;
+        }
+        state.error = null;
+      })
+      .addCase(requestVerification.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
       // Check Auth
       .addCase(checkAuth.pending, (state) => {
         state.isLoading = true;
@@ -176,6 +265,20 @@ const authSlice = createSlice({
         state.user = action.payload.data;
       })
       .addCase(getAlumniProfile.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Update Profile
+      .addCase(updateAlumniProfile.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateAlumniProfile.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.data;
+        state.error = null;
+      })
+      .addCase(updateAlumniProfile.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
       });

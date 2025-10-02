@@ -8,9 +8,8 @@ const getAllAlumni = async (req, res) => {
       limit = 10,
       batch,
       department,
-      graduationYear,
-      membershipStatus,
-      isVerified,
+      yearOfPassing,
+      accountStatus,
       search,
     } = req.query;
 
@@ -19,9 +18,8 @@ const getAllAlumni = async (req, res) => {
     
     if (batch) filter.batch = batch;
     if (department) filter.department = department;
-    if (graduationYear) filter.graduationYear = graduationYear;
-    if (membershipStatus) filter.membershipStatus = membershipStatus;
-    if (isVerified !== undefined) filter.isVerified = isVerified === 'true';
+    if (yearOfPassing) filter.yearOfPassing = parseInt(yearOfPassing);
+    if (accountStatus) filter.accountStatus = accountStatus;
     
     // Search functionality
     if (search) {
@@ -29,20 +27,14 @@ const getAllAlumni = async (req, res) => {
         { firstName: { $regex: search, $options: 'i' } },
         { lastName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
-        { studentId: { $regex: search, $options: 'i' } },
+        { enrollmentNumber: { $regex: search, $options: 'i' } },
         { alumniId: { $regex: search, $options: 'i' } },
       ];
     }
 
-    const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      select: '-password',
-      sort: { createdAt: -1 },
-    };
-
     const alumni = await Alumni.find(filter)
       .select('-password')
+      .populate('currentMembership.membershipId', 'name tier')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -81,7 +73,12 @@ const getAlumniById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const alumni = await Alumni.findById(id).select("-password");
+    const alumni = await Alumni.findById(id)
+      .select("-password")
+      .populate('currentMembership.membershipId', 'name tier features price')
+      .populate('membershipHistory', 'membershipId startDate expiryDate status')
+      .populate('eventRegistrations', 'eventId registrationDate attended status')
+      .populate('donations', 'donationCampaignId amount donationDate status');
 
     if (!alumni) {
       return res.status(404).json({
@@ -92,7 +89,12 @@ const getAlumniById = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: alumni,
+      data: {
+        ...alumni.toObject(),
+        isProfileComplete: alumni.isProfileComplete,
+        isVerified: alumni.isVerified,
+        hasActiveMembership: alumni.hasActiveMembership,
+      },
     });
   } catch (e) {
     console.log(e);
@@ -103,11 +105,119 @@ const getAlumniById = async (req, res) => {
   }
 };
 
-// Update alumni status (Admin only)
+// Verify Alumni (Admin only)
+const verifyAlumni = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (req.user.role !== "admin" && req.user.role !== "super_admin" && req.user.role !== "committee") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can verify alumni!",
+      });
+    }
+
+    const alumni = await Alumni.findById(id);
+
+    if (!alumni) {
+      return res.status(404).json({
+        success: false,
+        message: "Alumni not found!",
+      });
+    }
+
+    if (alumni.accountStatus !== "pending_verification") {
+      return res.status(400).json({
+        success: false,
+        message: "Alumni is not pending verification!",
+      });
+    }
+
+    // Verify account
+    alumni.accountStatus = "verified";
+    await alumni.save();
+
+    // TODO: Send verification success email to alumni
+
+    res.status(200).json({
+      success: true,
+      message: "Alumni verified successfully!",
+      data: {
+        id: alumni._id,
+        accountStatus: alumni.accountStatus,
+        alumniId: alumni.alumniId,
+        verifiedAt: alumni.verifiedAt,
+        canPostJobs: alumni.canPostJobs,
+      },
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred!",
+    });
+  }
+};
+
+// Reject Alumni (Admin only)
+const rejectAlumni = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (req.user.role !== "admin" && req.user.role !== "super_admin" && req.user.role !== "committee") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can reject alumni!",
+      });
+    }
+
+    const alumni = await Alumni.findById(id);
+
+    if (!alumni) {
+      return res.status(404).json({
+        success: false,
+        message: "Alumni not found!",
+      });
+    }
+
+    if (alumni.accountStatus !== "pending_verification") {
+      return res.status(400).json({
+        success: false,
+        message: "Alumni is not pending verification!",
+      });
+    }
+
+    // TODO: Send rejection email to alumni with reason before deletion
+
+    // Delete the alumni account
+    await Alumni.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Alumni account rejected and deleted successfully!",
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred!",
+    });
+  }
+};
+
+// Update alumni status/role (Admin only)
 const updateAlumniStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isVerified, membershipStatus, isActive, role } = req.body;
+    const { isActive, role, canPostJobs, canMentor } = req.body;
+
+    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can update alumni status!",
+      });
+    }
 
     const alumni = await Alumni.findById(id);
 
@@ -119,10 +229,10 @@ const updateAlumniStatus = async (req, res) => {
     }
 
     // Update fields
-    if (isVerified !== undefined) alumni.isVerified = isVerified;
-    if (membershipStatus) alumni.membershipStatus = membershipStatus;
     if (isActive !== undefined) alumni.isActive = isActive;
     if (role) alumni.role = role;
+    if (canPostJobs !== undefined) alumni.canPostJobs = canPostJobs;
+    if (canMentor !== undefined) alumni.canMentor = canMentor;
 
     await alumni.save();
 
@@ -131,10 +241,10 @@ const updateAlumniStatus = async (req, res) => {
       message: "Alumni status updated successfully!",
       data: {
         id: alumni._id,
-        isVerified: alumni.isVerified,
-        membershipStatus: alumni.membershipStatus,
         isActive: alumni.isActive,
         role: alumni.role,
+        canPostJobs: alumni.canPostJobs,
+        canMentor: alumni.canMentor,
       },
     });
   } catch (e) {
@@ -151,6 +261,13 @@ const deleteAlumni = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can delete alumni!",
+      });
+    }
+
     const alumni = await Alumni.findByIdAndDelete(id);
 
     if (!alumni) {
@@ -159,6 +276,8 @@ const deleteAlumni = async (req, res) => {
         message: "Alumni not found!",
       });
     }
+
+    // TODO: Clean up related data (memberships, registrations, donations)
 
     res.status(200).json({
       success: true,
@@ -177,9 +296,13 @@ const deleteAlumni = async (req, res) => {
 const getAlumniStats = async (req, res) => {
   try {
     const totalAlumni = await Alumni.countDocuments();
-    const verifiedAlumni = await Alumni.countDocuments({ isVerified: true });
-    const pendingAlumni = await Alumni.countDocuments({ membershipStatus: 'pending' });
+    const verifiedAlumni = await Alumni.countDocuments({ accountStatus: 'verified' });
+    const pendingVerification = await Alumni.countDocuments({ accountStatus: 'pending_verification' });
+    const incompleteProfiles = await Alumni.countDocuments({ accountStatus: 'incomplete_profile' });
     const activeAlumni = await Alumni.countDocuments({ isActive: true });
+    const alumniWithMembership = await Alumni.countDocuments({ 
+      'currentMembership.status': 'active' 
+    });
 
     // Get department wise count
     const departmentStats = await Alumni.aggregate([
@@ -211,12 +334,22 @@ const getAlumniStats = async (req, res) => {
     const yearStats = await Alumni.aggregate([
       {
         $group: {
-          _id: "$graduationYear",
+          _id: "$yearOfPassing",
           count: { $sum: 1 }
         }
       },
       {
         $sort: { _id: -1 }
+      }
+    ]);
+
+    // Get account status breakdown
+    const statusStats = await Alumni.aggregate([
+      {
+        $group: {
+          _id: "$accountStatus",
+          count: { $sum: 1 }
+        }
       }
     ]);
 
@@ -226,9 +359,12 @@ const getAlumniStats = async (req, res) => {
         overview: {
           totalAlumni,
           verifiedAlumni,
-          pendingAlumni,
+          pendingVerification,
+          incompleteProfiles,
           activeAlumni,
+          alumniWithMembership,
         },
+        statusStats,
         departmentStats,
         batchStats,
         yearStats,
@@ -247,13 +383,10 @@ const getAlumniStats = async (req, res) => {
 const getPendingVerifications = async (req, res) => {
   try {
     const pendingAlumni = await Alumni.find({
-      $or: [
-        { isVerified: false },
-        { membershipStatus: 'pending' }
-      ]
+      accountStatus: 'pending_verification'
     })
     .select('-password')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: 1 }); // Oldest first
 
     res.status(200).json({
       success: true,
@@ -269,11 +402,98 @@ const getPendingVerifications = async (req, res) => {
   }
 };
 
+// Export alumni data to Excel (Admin only)
+const exportAlumniData = async (req, res) => {
+  try {
+    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can export alumni data!",
+      });
+    }
+
+    const { accountStatus } = req.query;
+    
+    const filter = {};
+    if (accountStatus) filter.accountStatus = accountStatus;
+
+    const alumni = await Alumni.find(filter)
+      .select('-password -verificationToken')
+      .populate('currentMembership.membershipId', 'name tier')
+      .lean();
+
+    // Format data for Excel export
+    const excelData = alumni.map(alum => ({
+      'Alumni ID': alum.alumniId || 'N/A',
+      'First Name': alum.firstName,
+      'Middle Name': alum.middleName || '',
+      'Last Name': alum.lastName,
+      'Email': alum.email,
+      'Secondary Email': alum.secondaryEmail || 'N/A',
+      'Phone': alum.phone || 'N/A',
+      'Enrollment Number': alum.enrollmentNumber,
+      'Batch': alum.batch,
+      'Department': alum.department,
+      'Degree': alum.degree,
+      'Year of Joining': alum.yearOfJoining,
+      'Year of Passing': alum.yearOfPassing,
+      'Gender': alum.gender || 'N/A',
+      'Date of Birth': alum.dateOfBirth ? new Date(alum.dateOfBirth).toLocaleDateString() : 'N/A',
+      'Current Company': alum.currentCompany || 'N/A',
+      'Current Designation': alum.currentDesignation || 'N/A',
+      'Industry': alum.industry || 'N/A',
+      'LinkedIn': alum.linkedInProfile || 'N/A',
+      'City': alum.address?.city || 'N/A',
+      'State': alum.address?.state || 'N/A',
+      'Country': alum.address?.country || 'N/A',
+      'Account Status': alum.accountStatus,
+      'Is Active': alum.isActive ? 'Yes' : 'No',
+      'Membership Name': alum.currentMembership?.membershipId?.name || 'None',
+      'Membership Tier': alum.currentMembership?.membershipId?.tier || 'N/A',
+      'Membership Start Date': alum.currentMembership?.startDate 
+        ? new Date(alum.currentMembership.startDate).toLocaleDateString() 
+        : 'N/A',
+      'Membership Expiry Date': alum.currentMembership?.expiryDate 
+        ? new Date(alum.currentMembership.expiryDate).toLocaleDateString() 
+        : 'N/A',
+      'Membership Status': alum.currentMembership?.status || 'N/A',
+      'Verified At': alum.verifiedAt ? new Date(alum.verifiedAt).toLocaleDateString() : 'N/A',
+      'Registered At': new Date(alum.createdAt).toLocaleDateString(),
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Alumni data exported successfully!",
+      data: excelData,
+      count: excelData.length,
+    });
+
+    // NOTE: In actual implementation, use 'xlsx' library to generate and send Excel file
+    // const xlsx = require('xlsx');
+    // const ws = xlsx.utils.json_to_sheet(excelData);
+    // const wb = xlsx.utils.book_new();
+    // xlsx.utils.book_append_sheet(wb, ws, 'Alumni Data');
+    // const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    // res.setHeader('Content-Disposition', 'attachment; filename=alumni_data.xlsx');
+    // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    // res.send(buffer);
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred!",
+    });
+  }
+};
+
 module.exports = {
   getAllAlumni,
   getAlumniById,
+  verifyAlumni,
+  rejectAlumni,
   updateAlumniStatus,
   deleteAlumni,
   getAlumniStats,
   getPendingVerifications,
+  exportAlumniData,
 };

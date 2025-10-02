@@ -16,15 +16,16 @@ function RegisterForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     firstName: "",
+    middleName: "",
     lastName: "",
     email: "",
     password: "",
-    studentId: "",
+    enrollmentNumber: "",
     batch: "",
-    graduationYear: "",
+    yearOfJoining: "",
+    yearOfPassing: "",
     department: "",
     degree: "",
-    phone: "",
   });
 
   const [success, setSuccess] = useState(false);
@@ -69,11 +70,18 @@ function RegisterForm() {
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
             Registration Successful!
           </h3>
-          <p className="text-sm text-gray-600 leading-relaxed max-w-md mx-auto">
-            Your registration has been submitted. Please wait for admin
-            verification. You will be able to login once your account is
-            verified.
+          <p className="text-sm text-gray-600 leading-relaxed max-w-md mx-auto mb-4">
+            Your basic registration has been completed successfully. 
           </p>
+          <div className="bg-blue-50 border-l-4 border-blue-600 p-4 rounded-md max-w-md mx-auto text-left">
+            <p className="text-sm text-gray-700 font-semibold mb-2">Next Steps:</p>
+            <ol className="text-sm text-gray-600 space-y-1 list-decimal list-inside">
+              <li>Login to your account</li>
+              <li>Complete your profile with additional details</li>
+              <li>Request verification from admin</li>
+              <li>Wait for admin approval to access all features</li>
+            </ol>
+          </div>
         </div>
       </div>
     );
@@ -118,6 +126,20 @@ function RegisterForm() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Middle Name
+              </label>
+              <input
+                type="text"
+                name="middleName"
+                value={formData.middleName}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
+                placeholder="Enter your middle name"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Last Name *
               </label>
               <input
@@ -146,7 +168,7 @@ function RegisterForm() {
               />
             </div>
 
-            <div>
+            <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Password *
               </label>
@@ -161,21 +183,6 @@ function RegisterForm() {
                 required
               />
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                placeholder="Enter your phone number"
-                required
-              />
-            </div>
           </div>
         )}
 
@@ -183,15 +190,15 @@ function RegisterForm() {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Student ID *
+                Enrollment Number *
               </label>
               <input
                 type="text"
-                name="studentId"
-                value={formData.studentId}
+                name="enrollmentNumber"
+                value={formData.enrollmentNumber}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                placeholder="Enter your student ID"
+                placeholder="Enter your enrollment number"
                 required
               />
             </div>
@@ -264,12 +271,29 @@ function RegisterForm() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Graduation Year *
+                Year of Joining *
               </label>
               <input
                 type="number"
-                name="graduationYear"
-                value={formData.graduationYear}
+                name="yearOfJoining"
+                value={formData.yearOfJoining}
+                onChange={handleChange}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
+                placeholder="e.g., 2018"
+                min="1950"
+                max="2030"
+                required
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                Year of Passing *
+              </label>
+              <input
+                type="number"
+                name="yearOfPassing"
+                value={formData.yearOfPassing}
                 onChange={handleChange}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                 placeholder="e.g., 2022"
@@ -292,7 +316,7 @@ function RegisterForm() {
                   Name:
                 </span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {formData.firstName} {formData.lastName}
+                  {formData.firstName} {formData.middleName} {formData.lastName}
                 </span>
               </div>
               <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
@@ -305,18 +329,10 @@ function RegisterForm() {
               </div>
               <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
                 <span className="text-sm font-semibold text-gray-600">
-                  Student ID:
+                  Enrollment:
                 </span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {formData.studentId}
-                </span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
-                <span className="text-sm font-semibold text-gray-600">
-                  Phone:
-                </span>
-                <span className="text-sm text-gray-800 font-medium">
-                  {formData.phone}
+                  {formData.enrollmentNumber}
                 </span>
               </div>
               <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
@@ -345,15 +361,23 @@ function RegisterForm() {
               </div>
               <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
                 <span className="text-sm font-semibold text-gray-600">
-                  Graduation Year:
+                  Year Joined:
                 </span>
                 <span className="text-sm text-gray-800 font-medium">
-                  {formData.graduationYear}
+                  {formData.yearOfJoining}
+                </span>
+              </div>
+              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
+                <span className="text-sm font-semibold text-gray-600">
+                  Year Passed:
+                </span>
+                <span className="text-sm text-gray-800 font-medium">
+                  {formData.yearOfPassing}
                 </span>
               </div>
             </div>
             <p className="text-xs text-gray-600 mt-3 p-2.5 bg-blue-50 rounded-md border-l-4 border-blue-600">
-              Please review your information carefully. You can complete your profile after registration.
+              This is basic registration. You'll need to complete your profile and request verification after logging in.
             </p>
           </div>
         )}

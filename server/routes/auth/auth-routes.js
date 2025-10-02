@@ -8,7 +8,6 @@ const {
   getAlumniProfile,
   updateAlumniProfile,
   changePassword,
-  verifyAlumni,
 } = require("../../controllers/auth/auth-controller");
 
 const router = express.Router();
@@ -65,7 +64,6 @@ router.get("/profile", authMiddleware, getAlumniProfile);
 router.put("/profile/:id", authMiddleware, updateAlumniProfile);
 router.put("/change-password", authMiddleware, changePassword);
 
-// Admin routes
-router.put("/verify/:id", authMiddleware, verifyAlumni);
+
 
 module.exports = router;
