@@ -50,19 +50,11 @@ const EventSchema = new mongoose.Schema(
       type: String,
     },
     // Registration details
-    registrationRequired: {
-      type: Boolean,
-      default: true,
-    },
     registrationStartDate: {
       type: Date,
     },
     registrationEndDate: {
       type: Date,
-    },
-    maxAttendees: {
-      type: Number,
-      default: null, // null means unlimited
     },
     currentAttendees: {
       type: Number,
@@ -91,9 +83,6 @@ const EventSchema = new mongoose.Schema(
     coverImage: {
       type: String,
     },
-    gallery: [{
-      type: String,
-    }],
     agenda: [{
       time: String,
       title: String,
@@ -125,7 +114,7 @@ const EventSchema = new mongoose.Schema(
     remindersSent: [{
       type: {
         type: String,
-        enum: ["registration_confirmation", "1_week_before", "1_day_before", "event_day", "post_event"],
+        enum: ["1_week_before", "1_day_before", "event_day", "post_event"],
       },
       sentAt: Date,
       recipientCount: Number,

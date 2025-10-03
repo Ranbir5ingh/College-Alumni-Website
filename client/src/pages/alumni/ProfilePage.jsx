@@ -6,7 +6,7 @@ import {
   requestVerification,
   clearError,
   getAlumniProfile,
-} from "../store/auth-slice";
+} from "../../store/auth-slice";
 import {
   Select,
   SelectContent,

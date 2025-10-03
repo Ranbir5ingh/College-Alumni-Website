@@ -8,6 +8,7 @@ const cors = require("cors");
 // Import routes
 const authRouter = require("./routes/auth/auth-routes");
 const adminAlumniRouter = require("./routes/admin/alumni-routes.js");
+const adminEventRouter = require("./routes/admin/event-routes.js");
 
 // Create database connection
 mongoose
@@ -39,5 +40,6 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/admin/alumni", adminAlumniRouter);
+app.use("/api/admin/events", adminEventRouter);
 
 app.listen(PORT, () => console.log(`Server is now running on port ${PORT}`));

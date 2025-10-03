@@ -2,21 +2,25 @@ import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { checkAuth } from "./store/auth-slice";
-import HomePage from "./pages/HomePage";
-import AuthPage from "./pages/AuthPage";
-import DashboardPage from "./pages/DashboardPage";
-import ProfilePage from "./pages/ProfilePage";
-import About from "./pages/About";
-import AlumniDirectory from "./pages/AlumniDirectory";
-import Events from "./pages/Events";
-import News from "./pages/News";
-import Gallery from "./pages/Gallery";
-import Careers from "./pages/Careers";
-import GiveBack from "./pages/giveback";
-import ContactPage from "./pages/Contact";
+import HomePage from "./pages/public/HomePage";
+import AuthPage from "./pages/auth/AuthPage";
+import DashboardPage from "./pages/alumni/DashboardPage";
+import ProfilePage from "./pages/alumni/ProfilePage";
+import About from "./pages/public/About";
+import AlumniDirectory from "./pages/alumni/AlumniDirectory";
+import Events from "./pages/alumni/Events";
+import News from "./pages/alumni/News";
+import Gallery from "./pages/alumni/Gallery";
+import Careers from "./pages/alumni/Careers";
+import GiveBack from "./pages/alumni/GiveBack";
+import ContactPage from "./pages/public/Contact";
 import CheckAuth from "./components/common/CheckAuth";
 import AlumniLayout from "./components/layouts/layouts/AlumniLayout";
 import PublicLayout from "./components/layouts/layouts/PublicLayout";
+import AdminLayout from "./components/layouts/layouts/AdminLayout";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminEvents from "./pages/admin/Events";
+import AlumniManagement from "./pages/admin/AlumniManagement";
 
 
 
@@ -79,6 +83,20 @@ function App() {
           <Route path="careers" element={<Careers />} />
           <Route path="giveback" element={<GiveBack />} />
           
+        </Route>
+
+        <Route
+          path="/admin"
+          element={
+            <CheckAuth isAuthenticated={isAuthenticated}>
+              <AdminLayout />
+            </CheckAuth>
+          }
+        >
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="events" element={<AdminEvents />} />
+          <Route path="alumni" element={<AlumniManagement />} />
+
         </Route>
 
         {/* Fallback route */}

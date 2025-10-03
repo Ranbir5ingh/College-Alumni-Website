@@ -42,18 +42,10 @@ const EventRegistrationSchema = new mongoose.Schema(
     attendanceMarkedAt: {
       type: Date,
     },
-    attendanceMarkedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
-    },
-    attendanceMethod: {
-      type: String,
-      enum: ["qr_code", "manual", "automatic"],
-    },
     // Registration status
     status: {
       type: String,
-      enum: ["confirmed", "cancelled", "waitlisted", "checked_in"],
+      enum: ["confirmed", "cancelled"],
       default: "confirmed",
     },
     // Cancellation details
@@ -63,20 +55,6 @@ const EventRegistrationSchema = new mongoose.Schema(
     cancellationReason: {
       type: String,
     },
-    // Check-in details
-    checkedInAt: {
-      type: Date,
-    },
-    // Companion/Guest details (if allowed)
-    numberOfGuests: {
-      type: Number,
-      default: 0,
-    },
-    guestDetails: [{
-      name: String,
-      email: String,
-      phone: String,
-    }],
     // Email tracking
     emailsSent: [{
       type: {
@@ -84,19 +62,7 @@ const EventRegistrationSchema = new mongoose.Schema(
         enum: ["confirmation", "reminder", "cancellation", "thank_you"],
       },
       sentAt: Date,
-      opened: {
-        type: Boolean,
-        default: false,
-      },
-      openedAt: Date,
     }],
-    // Additional info
-    specialRequirements: {
-      type: String,
-    },
-    dietaryPreferences: {
-      type: String,
-    },
     // Feedback (post-event)
     feedback: {
       rating: {
