@@ -1,4 +1,3 @@
-// routes/user/alumni-routes.js
 const express = require("express");
 
 const {
@@ -6,8 +5,8 @@ const {
   getMyEvents,
   getMyDonations,
   getMyMembership,
-  searchAlumniDirectory,
-  getAlumniProfileById,
+  searchUserDirectory,
+  getUserProfileById,
 } = require("../../controllers/user/alumni-controller");
 
 const { authMiddleware } = require("../../controllers/auth/auth-controller");
@@ -20,8 +19,8 @@ router.get("/my-events", authMiddleware, getMyEvents);
 router.get("/my-donations", authMiddleware, getMyDonations);
 router.get("/my-membership", authMiddleware, getMyMembership);
 
-// Alumni directory - accessible to verified alumni
-router.get("/directory", authMiddleware, searchAlumniDirectory);
-router.get("/directory/:id", authMiddleware, getAlumniProfileById);
+// User directory - accessible to verified alumni
+router.get("/directory", authMiddleware, searchUserDirectory);
+router.get("/directory/:id", authMiddleware, getUserProfileById);
 
 module.exports = router;

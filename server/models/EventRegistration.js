@@ -9,7 +9,7 @@ const EventRegistrationSchema = new mongoose.Schema(
     },
     alumniId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
       required: true,
     },
     // Registration details

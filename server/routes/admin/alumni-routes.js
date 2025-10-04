@@ -1,15 +1,15 @@
 const express = require("express");
 
 const {
-  getAllAlumni,
-  getAlumniById,
-  verifyAlumni,
-  rejectAlumni,
-  updateAlumniStatus,
-  deleteAlumni,
-  getAlumniStats,
+  getAllUser,
+  getUserById,
+  verifyUser,
+  rejectUser,
+  updateUserStatus,
+  deleteUser,
+  getUserStats,
   getPendingVerifications,
-  exportAlumniData,
+  exportUserData,
   handleImageUpload
 } = require("../../controllers/admin/alumni-controller");
 
@@ -30,19 +30,19 @@ const adminMiddleware = (req, res, next) => {
 };
 
 // Admin routes for alumni management
-router.get("/", authMiddleware, adminMiddleware, getAllAlumni);
-router.get("/stats", authMiddleware, adminMiddleware, getAlumniStats);
+router.get("/", authMiddleware, adminMiddleware, getAllUser);
+router.get("/stats", authMiddleware, adminMiddleware, getUserStats);
 router.get("/pending", authMiddleware, adminMiddleware, getPendingVerifications);
-router.get("/export", authMiddleware, adminMiddleware, exportAlumniData);
-router.get("/:id", authMiddleware, adminMiddleware, getAlumniById);
+router.get("/export", authMiddleware, adminMiddleware, exportUserData);
+router.get("/:id", authMiddleware, adminMiddleware, getUserById);
 
 // Verification routes
-router.post("/:id/verify", authMiddleware, adminMiddleware, verifyAlumni);
-router.post("/:id/reject", authMiddleware, adminMiddleware, rejectAlumni);
+router.post("/:id/verify", authMiddleware, adminMiddleware, verifyUser);
+router.post("/:id/reject", authMiddleware, adminMiddleware, rejectUser);
 
 // Status and permission management
-router.put("/:id/status", authMiddleware, adminMiddleware, updateAlumniStatus);
-router.delete("/:id", authMiddleware, adminMiddleware, deleteAlumni);
+router.put("/:id/status", authMiddleware, adminMiddleware, updateUserStatus);
+router.delete("/:id", authMiddleware, adminMiddleware, deleteUser);
 
 router.post("/upload-image", upload.single("my_file"), handleImageUpload);
 

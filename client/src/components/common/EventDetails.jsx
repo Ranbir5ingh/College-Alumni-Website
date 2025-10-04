@@ -30,7 +30,7 @@ function EventDetailsPage() {
   
   const event = isAdmin ? adminEvent.currentEvent : userEvent.currentEvent;
   const isLoading = isAdmin ? adminEvent.isLoading : userEvent.isLoading;
-  
+  console.log(event?.isRegistrationOpen)
   const [editMode, setEditMode] = useState({});
   const [editValues, setEditValues] = useState({});
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
@@ -403,7 +403,7 @@ function EventDetailsPage() {
                 <Check className="text-green-600" size={20} />
                 <span className="text-green-600 font-medium">Already Registered</span>
               </div>
-            ) : event.isRegistrationOpen ? (
+            ) : !event.isRegistrationOpen ? (
               <Button
                 onClick={() => setShowRegisterDialog(true)}
                 size="lg"

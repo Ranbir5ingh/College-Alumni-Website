@@ -1,14 +1,14 @@
 const express = require("express");
 
 const {
-  registerAlumni,
+  registerUser,
   completeProfile,
   requestVerification,
-  loginAlumni,
-  logoutAlumni,
+  loginUser,
+  logoutUser,
   authMiddleware,
-  getAlumniProfile,
-  updateAlumniProfile,
+  getUserProfile,
+  updateUserProfile,
   requestPasswordReset,
   verifyResetToken,
   resetPassword,
@@ -17,9 +17,9 @@ const {
 const router = express.Router();
 
 // Public routes
-router.post("/register", registerAlumni);
-router.post("/login", loginAlumni);
-router.post("/logout", logoutAlumni);
+router.post("/register", registerUser);
+router.post("/login", loginUser);
+router.post("/logout", logoutUser);
 
 // Password reset routes (public - no auth required)
 router.get("/verify-reset-token/:token", verifyResetToken);
@@ -28,8 +28,8 @@ router.post("/reset-password/:token", resetPassword);
 // Protected routes
 router.get("/check-auth", authMiddleware, async (req, res) => {
   try {
-    const Alumni = require("../../models/Alumni");
-    const user = await Alumni.findById(req.user.id)
+    const User = require("../../models/User");
+    const user = await User.findById(req.user.id)
       .select("-password")
       .populate("currentMembership.membershipId", "name tier");
     
@@ -54,8 +54,8 @@ router.get("/check-auth", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/profile", authMiddleware, getAlumniProfile);
-router.put("/profile/:id", authMiddleware, updateAlumniProfile);
+router.get("/profile", authMiddleware, getUserProfile);
+router.put("/profile/:id", authMiddleware, updateUserProfile);
 
 // Password reset request (protected - requires auth)
 router.post("/request-password-reset", authMiddleware, requestPasswordReset);

@@ -1,11 +1,11 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const Alumni = require("../../models/Alumni");
+const User = require("../../models/User");
 const crypto = require("crypto");
 const sendEmail = require("../../helpers/sendEmail");
 
-// Register Alumni (Basic Registration)
-const registerAlumni = async (req, res) => {
+// Register User (Basic Registration)
+const registerUser = async (req, res) => {
   try {
     const {
       firstName,
@@ -14,28 +14,27 @@ const registerAlumni = async (req, res) => {
       email,
       password,
       enrollmentNumber,
-      batch,
       yearOfJoining,
       yearOfPassing,
       department,
       degree,
     } = req.body;
 
-    // Check if alumni already exists
-    const existingAlumni = await Alumni.findOne({ email });
-    if (existingAlumni) {
+    // Check if User already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Alumni already exists with this email!",
+        message: "User already exists with this email!",
       });
     }
 
     // Check if enrollment number already exists
-    const existingEnrollment = await Alumni.findOne({ enrollmentNumber });
+    const existingEnrollment = await User.findOne({ enrollmentNumber });
     if (existingEnrollment) {
       return res.status(400).json({
         success: false,
-        message: "Alumni already exists with this enrollment number!",
+        message: "User already exists with this enrollment number!",
       });
     }
 
@@ -49,15 +48,15 @@ const registerAlumni = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Create new alumni with basic info only
-    const newAlumni = new Alumni({
+    // Create new User with basic info only
+    const newUser = new User({
       firstName,
       middleName,
       lastName,
       email,
       password: hashPassword,
       enrollmentNumber,
-      batch,
+      batch: `${yearOfJoining}-${yearOfPassing}`,
       yearOfJoining,
       yearOfPassing,
       department,
@@ -66,14 +65,14 @@ const registerAlumni = async (req, res) => {
       accountStatus: "incomplete_profile",
     });
 
-    await newAlumni.save();
+    await newUser.save();
 
     res.status(201).json({
       success: true,
       message: "Registration successful! Please complete your profile.",
       data: {
-        id: newAlumni._id,
-        accountStatus: newAlumni.accountStatus,
+        id: newUser._id,
+        accountStatus: newUser.accountStatus,
       },
     });
   } catch (e) {
@@ -106,17 +105,17 @@ const completeProfile = async (req, res) => {
     } = req.body;
     console.log(req.body);
 
-    const alumni = await Alumni.findById(id);
+    const user = await User.findById(id);
     
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     // Check if completion is allowed (only from incomplete_profile)
-    if (alumni.accountStatus !== "incomplete_profile") {
+    if (user.accountStatus !== "incomplete_profile") {
       return res.status(400).json({
         success: false,
         message: "Profile is already completed or verification is underway!",
@@ -125,42 +124,42 @@ const completeProfile = async (req, res) => {
 
     // Update profile fields
     // NOTE: Using direct assignment assumes the frontend sends the required data for completion.
-    alumni.phone = phone;
-    alumni.secondaryPhone = secondaryPhone;
-    alumni.gender = gender;
-    alumni.dateOfBirth = dateOfBirth;
-    alumni.address = address;
-    alumni.currentCompany = currentCompany;
-    alumni.currentDesignation = currentDesignation;
-    alumni.industry = industry;
-    alumni.skills = skills;
-    alumni.linkedInProfile = linkedInProfile;
-    alumni.profilePicture = profilePicture;
-    alumni.bio = bio;
-    alumni.secondaryEmail = secondaryEmail;
+    user.phone = phone;
+    user.secondaryPhone = secondaryPhone;
+    user.gender = gender;
+    user.dateOfBirth = dateOfBirth;
+    user.address = address;
+    user.currentCompany = currentCompany;
+    user.currentDesignation = currentDesignation;
+    user.industry = industry;
+    user.skills = skills;
+    user.linkedInProfile = linkedInProfile;
+    user.profilePicture = profilePicture;
+    user.bio = bio;
+    user.secondaryEmail = secondaryEmail;
 
     // Save the changes first so the virtual 'isProfileComplete' is calculated
-    await alumni.save();
+    await user.save();
 
     // Re-fetch or check the current state to access the virtual field accurately
     // The previous save() *should* update virtuals, but a quick re-fetch ensures accuracy, 
     // or you can just check the newly saved object. We'll use the saved object.
     
     // --- CRITICAL FIX: Check completeness and update status ---
-    if (alumni.isProfileComplete) {
+    if (user.isProfileComplete) {
         // If the profile is fully complete (based on the virtual check)
         // change the status directly to 'pending_verification' as requested.
-        alumni.accountStatus = "pending_verification"; 
+        user.accountStatus = "pending_verification"; 
         
         // Save again to persist the status change
-        await alumni.save(); 
+        await user.save(); 
         
         // Ensure the response is sent with the updated status
         res.status(200).json({
             success: true,
             message: "Profile completed and verification requested successfully!",
             // Return the entire updated user object to the frontend auth slice
-            data: alumni.toObject({ virtuals: true }), 
+            data: user.toObject({ virtuals: true }), 
         });
         return; // End the function call
     }
@@ -171,7 +170,7 @@ const completeProfile = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Profile details updated, but required fields are still missing. Please complete your profile.",
-      data: alumni.toObject({ virtuals: true }), 
+      data: user.toObject({ virtuals: true }), 
     });
 
   } catch (e) {
@@ -188,16 +187,16 @@ const requestVerification = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id);
+    const user = await User.findById(id);
     
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
-    if (alumni.accountStatus !== "incomplete_profile") {
+    if (user.accountStatus !== "incomplete_profile") {
       return res.status(400).json({
         success: false,
         message: "Verification already requested or account is verified!",
@@ -205,26 +204,26 @@ const requestVerification = async (req, res) => {
     }
 
     // Check if profile is complete using virtual
-    if (!alumni.isProfileComplete) {
+    if (!user.isProfileComplete) {
       return res.status(400).json({
         success: false,
         message: "Please complete your profile before requesting verification!",
         missingFields: [
-          !alumni.phone && "phone",
-          !alumni.gender && "gender",
-          !alumni.dateOfBirth && "dateOfBirth",
-          !alumni.currentCompany && "currentCompany",
-          !alumni.currentDesignation && "currentDesignation",
-          !alumni.industry && "industry",
-          !alumni.address?.city && "address.city",
-          !alumni.address?.country && "address.country",
+          !user.phone && "phone",
+          !user.gender && "gender",
+          !user.dateOfBirth && "dateOfBirth",
+          !user.currentCompany && "currentCompany",
+          !user.currentDesignation && "currentDesignation",
+          !user.industry && "industry",
+          !user.address?.city && "address.city",
+          !user.address?.country && "address.country",
         ].filter(Boolean),
       });
     }
 
     // Update status to pending verification
-    alumni.accountStatus = "pending_verification";
-    await alumni.save();
+    user.accountStatus = "pending_verification";
+    await user.save();
 
     // TODO: Send email notification to admin about new verification request
 
@@ -232,7 +231,7 @@ const requestVerification = async (req, res) => {
       success: true,
       message: "Verification request submitted successfully! Please wait for admin approval.",
       data: {
-        accountStatus: alumni.accountStatus,
+        accountStatus: user.accountStatus,
       },
     });
   } catch (e) {
@@ -244,27 +243,27 @@ const requestVerification = async (req, res) => {
   }
 };
 
-// Login Alumni
-const loginAlumni = async (req, res) => {
+// Login User
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const checkAlumni = await Alumni.findOne({ email }).select("+password");
-    if (!checkAlumni) {
+    const checkUser = await User.findOne({ email }).select("+password");
+    if (!checkUser) {
       return res.status(404).json({
         success: false,
-        message: "Alumni doesn't exist! Please register first.",
+        message: "User doesn't exist! Please register first.",
       });
     }
 
-    if (!checkAlumni.isActive) {
+    if (!checkUser.isActive) {
       return res.status(403).json({
         success: false,
         message: "Your account has been deactivated. Please contact admin.",
       });
     }
 
-    if (checkAlumni.accountStatus === "rejected") {
+    if (checkUser.accountStatus === "rejected") {
       return res.status(403).json({
         success: false,
         message: "Your account has been rejected. Please contact admin.",
@@ -273,7 +272,7 @@ const loginAlumni = async (req, res) => {
 
     const checkPasswordMatch = await bcrypt.compare(
       password,
-      checkAlumni.password
+      checkUser.password
     );
     if (!checkPasswordMatch) {
       return res.status(400).json({
@@ -283,15 +282,15 @@ const loginAlumni = async (req, res) => {
     }
 
     // Update last login
-    checkAlumni.lastLogin = new Date();
-    await checkAlumni.save();
+    checkUser.lastLogin = new Date();
+    await checkUser.save();
 
     const token = jwt.sign(
       {
-        id: checkAlumni._id,
-        role: checkAlumni.role,
-        email: checkAlumni.email,
-        accountStatus: checkAlumni.accountStatus,
+        id: checkUser._id,
+        role: checkUser.role,
+        email: checkUser.email,
+        accountStatus: checkUser.accountStatus,
       },
       process.env.JWT_SECRET,
       { expiresIn: "60m" }
@@ -300,7 +299,7 @@ const loginAlumni = async (req, res) => {
     res.cookie("token", token, { httpOnly: true, secure: false }).json({
       success: true,
       message: "Logged in successfully",
-      user: checkAlumni,
+      user: checkUser,
     });
   } catch (e) {
     console.log(e);
@@ -311,8 +310,8 @@ const loginAlumni = async (req, res) => {
   }
 };
 
-// Logout Alumni
-const logoutAlumni = (req, res) => {
+// Logout User
+const logoutUser = (req, res) => {
   res.clearCookie("token").json({
     success: true,
     message: "Logged out successfully!",
@@ -341,27 +340,27 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-// Get Alumni Profile
-const getAlumniProfile = async (req, res) => {
+// Get User Profile
+const getUserProfile = async (req, res) => {
   try {
-    const alumni = await Alumni.findById(req.user.id)
+    const user = await User.findById(req.user.id)
       .select("-password")
       .populate("currentMembership.membershipId", "name tier features");
     
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     res.status(200).json({
       success: true,
       data: {
-        ...alumni.toObject(),
-        isProfileComplete: alumni.isProfileComplete,
-        isVerified: alumni.isVerified,
-        hasActiveMembership: alumni.hasActiveMembership,
+        ...user.toObject(),
+        isProfileComplete: user.isProfileComplete,
+        isVerified: user.isVerified,
+        hasActiveMembership: user.hasActiveMembership,
       },
     });
   } catch (e) {
@@ -373,8 +372,8 @@ const getAlumniProfile = async (req, res) => {
   }
 };
 
-// Update Alumni Profile
-const updateAlumniProfile = async (req, res) => {
+// Update User Profile
+const updateUserProfile = async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -406,15 +405,15 @@ const updateAlumniProfile = async (req, res) => {
       ...updateData 
     } = req.body;
 
-    const updatedAlumni = await Alumni.findByIdAndUpdate(id, updateData, {
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     }).select("-password");
 
-    if (!updatedAlumni) {
+    if (!updatedUser) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
@@ -422,8 +421,8 @@ const updateAlumniProfile = async (req, res) => {
       success: true,
       message: "Profile updated successfully!",
       data: {
-        ...updatedAlumni.toObject(),
-        isProfileComplete: updatedAlumni.isProfileComplete,
+        ...updatedUser.toObject(),
+        isProfileComplete: updatedUser.isProfileComplete,
       },
     });
   } catch (e) {
@@ -439,11 +438,11 @@ const requestPasswordReset = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id);
-    if (!alumni) {
+    const user = await User.findById(id);
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
@@ -455,9 +454,9 @@ const requestPasswordReset = async (req, res) => {
       .digest("hex");
 
     // Store hashed token and expiry in database
-    alumni.passwordResetToken = hashedToken;
-    alumni.passwordResetExpires = Date.now() + 3600000; // 1 hour
-    await alumni.save();
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
 
     // Create reset URL
     const resetUrl = `${process.env.CLIENT_BASE_URL}/reset-password/${resetToken}`;
@@ -483,8 +482,8 @@ const requestPasswordReset = async (req, res) => {
             <h1>Password Reset Request</h1>
           </div>
           <div class="content">
-            <p>Hi ${alumni.firstName},</p>
-            <p>We received a request to reset your password for your BBSBEC Alumni Portal account.</p>
+            <p>Hi ${user.firstName},</p>
+            <p>We received a request to reset your password for your BBSBEC User Portal account.</p>
             <p>Click the button below to reset your password:</p>
             <center>
               <a href="${resetUrl}" class="button">Reset Password</a>
@@ -501,7 +500,7 @@ const requestPasswordReset = async (req, res) => {
             </div>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} BBSBEC Alumni Portal. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} BBSBEC User Portal. All rights reserved.</p>
             <p>This is an automated email. Please do not reply.</p>
           </div>
         </div>
@@ -511,8 +510,8 @@ const requestPasswordReset = async (req, res) => {
 
     // Send email
     await sendEmail(
-      alumni.email,
-      "Password Reset Request - BBSBEC Alumni Portal",
+      user.email,
+      "Password Reset Request - BBSBEC User Portal",
       emailHtml
     );
 
@@ -540,13 +539,13 @@ const verifyResetToken = async (req, res) => {
       .update(token)
       .digest("hex");
 
-    // Find alumni with valid token
-    const alumni = await Alumni.findOne({
+    // Find user with valid token
+    const user = await User.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
     });
 
-    if (!alumni) {
+    if (!user) {
       return res.status(400).json({
         success: false,
         message: "Invalid or expired password reset token!",
@@ -556,7 +555,7 @@ const verifyResetToken = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Token is valid",
-      email: alumni.email, // Return email for display (masked)
+      email: user.email, // Return email for display (masked)
     });
   } catch (e) {
     console.error("Error in verifyResetToken:", e);
@@ -586,13 +585,13 @@ const resetPassword = async (req, res) => {
       .update(token)
       .digest("hex");
 
-    // Find alumni with valid token
-    const alumni = await Alumni.findOne({
+    // Find user with valid token
+    const user = await User.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
     }).select("+password");
 
-    if (!alumni) {
+    if (!user) {
       return res.status(400).json({
         success: false,
         message: "Invalid or expired password reset token!",
@@ -603,10 +602,10 @@ const resetPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // Update password and clear reset token
-    alumni.password = hashedPassword;
-    alumni.passwordResetToken = undefined;
-    alumni.passwordResetExpires = undefined;
-    await alumni.save();
+    user.password = hashedPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
 
     // Send confirmation email
     const confirmationEmailHtml = `
@@ -628,15 +627,15 @@ const resetPassword = async (req, res) => {
             <h1>✓ Password Changed Successfully</h1>
           </div>
           <div class="content">
-            <p>Hi ${alumni.firstName},</p>
+            <p>Hi ${user.firstName},</p>
             <div class="success">
               <strong>Your password has been changed successfully!</strong>
             </div>
-            <p>Your BBSBEC Alumni Portal account password was changed on ${new Date().toLocaleString()}.</p>
+            <p>Your BBSBEC User Portal account password was changed on ${new Date().toLocaleString()}.</p>
             <p>If you did not make this change, please contact us immediately at <a href="mailto:${process.env.EMAIL_USER}">${process.env.EMAIL_USER}</a></p>
           </div>
           <div class="footer">
-            <p>© ${new Date().getFullYear()} BBSBEC Alumni Portal. All rights reserved.</p>
+            <p>© ${new Date().getFullYear()} BBSBEC User Portal. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -644,8 +643,8 @@ const resetPassword = async (req, res) => {
     `;
 
     await sendEmail(
-      alumni.email,
-      "Password Changed Successfully - BBSBEC Alumni Portal",
+      user.email,
+      "Password Changed Successfully - BBSBEC User Portal",
       confirmationEmailHtml
     );
 
@@ -664,14 +663,14 @@ const resetPassword = async (req, res) => {
 
 
 module.exports = {
-  registerAlumni,
+  registerUser,
   completeProfile,
   requestVerification,
-  loginAlumni,
-  logoutAlumni,
+  loginUser,
+  logoutUser,
   authMiddleware,
-  getAlumniProfile,
-  updateAlumniProfile,
+  getUserProfile,
+  updateUserProfile,
   requestPasswordReset,
   verifyResetToken,
   resetPassword,

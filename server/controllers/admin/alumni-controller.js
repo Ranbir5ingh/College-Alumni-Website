@@ -1,11 +1,11 @@
-const Alumni = require("../../models/Alumni");
+const User = require("../../models/User");
 const { imageUploadUtil } = require("../../helpers/cloudinary");
 
 // Helper function to check if a query parameter is meaningful (not null, undefined, or empty string literal)
 const isQueryValid = (value) => value && value !== 'null' && value !== 'undefined' && value !== '';
 
-// Get all alumni (Admin only)
-const getAllAlumni = async (req, res) => {
+// Get all user (Admin only)
+const getAllUser = async (req, res) => {
   try {
     const {
       page = 1,
@@ -37,32 +37,32 @@ const getAllAlumni = async (req, res) => {
       ];
     }
 
-    const alumni = await Alumni.find(filter)
+    const user = await User.find(filter)
       .select('-password')
       .populate('currentMembership.membershipId', 'name tier')
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
-    const totalAlumni = await Alumni.countDocuments(filter);
+    const totalUser = await User.countDocuments(filter);
 
-    if (!alumni.length) {
+    if (!user.length) {
       // Returning 404 here only if the query found nothing. 
       // With the fix above, this should now correctly return the full list (200) when no filters are set.
       return res.status(404).json({
         success: false,
-        message: "No alumni found!",
+        message: "No user found!",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: alumni,
+      data: user,
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(totalAlumni / limit),
-        totalAlumni,
-        hasNextPage: page < Math.ceil(totalAlumni / limit),
+        totalPages: Math.ceil(totalUser / limit),
+        totalUser,
+        hasNextPage: page < Math.ceil(totalUser / limit),
         hasPrevPage: page > 1,
       },
     });
@@ -75,32 +75,32 @@ const getAllAlumni = async (req, res) => {
   }
 };
 
-// Get alumni by ID (Admin only)
-const getAlumniById = async (req, res) => {
+// Get user by ID (Admin only)
+const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const alumni = await Alumni.findById(id)
+    const user = await User.findById(id)
       .select("-password")
       .populate('currentMembership.membershipId', 'name tier features price')
       .populate('membershipHistory', 'membershipId startDate expiryDate status')
       .populate('eventRegistrations', 'eventId registrationDate attended status')
       .populate('donations', 'donationCampaignId amount donationDate status');
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     res.status(200).json({
       success: true,
       data: {
-        ...alumni.toObject(),
-        isProfileComplete: alumni.isProfileComplete,
-        isVerified: alumni.isVerified,
-        hasActiveMembership: alumni.hasActiveMembership,
+        ...user.toObject(),
+        isProfileComplete: user.isProfileComplete,
+        isVerified: user.isVerified,
+        hasActiveMembership: user.hasActiveMembership,
       },
     });
   } catch (e) {
@@ -112,49 +112,49 @@ const getAlumniById = async (req, res) => {
   }
 };
 
-// Verify Alumni (Admin only)
-const verifyAlumni = async (req, res) => {
+// Verify User (Admin only)
+const verifyUser = async (req, res) => {
   try {
     const { id } = req.params;
 
     if (req.user.role !== "admin" && req.user.role !== "super_admin" && req.user.role !== "committee") {
       return res.status(403).json({
         success: false,
-        message: "Only admin can verify alumni!",
+        message: "Only admin can verify user!",
       });
     }
 
-    const alumni = await Alumni.findById(id);
+    const user = await User.findById(id);
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
-    if (alumni.accountStatus !== "pending_verification") {
+    if (user.accountStatus !== "pending_verification") {
       return res.status(400).json({
         success: false,
-        message: "Alumni is not pending verification!",
+        message: "User is not pending verification!",
       });
     }
 
     // Verify account
-    alumni.accountStatus = "verified";
-    await alumni.save();
+    user.accountStatus = "verified";
+    await user.save();
 
-    // TODO: Send verification success email to alumni
+    // TODO: Send verification success email to user
 
     res.status(200).json({
       success: true,
-      message: "Alumni verified successfully!",
+      message: "User verified successfully!",
       data: {
-        id: alumni._id,
-        accountStatus: alumni.accountStatus,
-        alumniId: alumni.alumniId,
-        verifiedAt: alumni.verifiedAt,
-        canPostJobs: alumni.canPostJobs,
+        id: user._id,
+        accountStatus: user.accountStatus,
+        alumniId: user.alumniId,
+        verifiedAt: user.verifiedAt,
+        canPostJobs: user.canPostJobs,
       },
     });
   } catch (e) {
@@ -166,8 +166,8 @@ const verifyAlumni = async (req, res) => {
   }
 };
 
-// Reject Alumni (Admin only)
-const rejectAlumni = async (req, res) => {
+// Reject User (Admin only)
+const rejectUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -175,34 +175,34 @@ const rejectAlumni = async (req, res) => {
     if (req.user.role !== "admin" && req.user.role !== "super_admin" && req.user.role !== "committee") {
       return res.status(403).json({
         success: false,
-        message: "Only admin can reject alumni!",
+        message: "Only admin can reject user!",
       });
     }
 
-    const alumni = await Alumni.findById(id);
+    const user = await User.findById(id);
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
-    if (alumni.accountStatus !== "pending_verification") {
+    if (user.accountStatus !== "pending_verification") {
       return res.status(400).json({
         success: false,
-        message: "Alumni is not pending verification!",
+        message: "User is not pending verification!",
       });
     }
 
-    // TODO: Send rejection email to alumni with reason before deletion
+    // TODO: Send rejection email to user with reason before deletion
 
-    // Delete the alumni account
-    await Alumni.findByIdAndDelete(id);
+    // Delete the user account
+    await User.findByIdAndDelete(id);
 
     res.status(200).json({
       success: true,
-      message: "Alumni account rejected and deleted successfully!",
+      message: "User account rejected and deleted successfully!",
     });
   } catch (e) {
     console.log(e);
@@ -213,8 +213,8 @@ const rejectAlumni = async (req, res) => {
   }
 };
 
-// Update alumni status/role (Admin only)
-const updateAlumniStatus = async (req, res) => {
+// Update user status/role (Admin only)
+const updateUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { isActive, role, canPostJobs, canMentor } = req.body;
@@ -222,36 +222,36 @@ const updateAlumniStatus = async (req, res) => {
     if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       return res.status(403).json({
         success: false,
-        message: "Only admin can update alumni status!",
+        message: "Only admin can update user status!",
       });
     }
 
-    const alumni = await Alumni.findById(id);
+    const user = await User.findById(id);
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     // Update fields
-    if (isActive !== undefined) alumni.isActive = isActive;
-    if (role) alumni.role = role;
-    if (canPostJobs !== undefined) alumni.canPostJobs = canPostJobs;
-    if (canMentor !== undefined) alumni.canMentor = canMentor;
+    if (isActive !== undefined) user.isActive = isActive;
+    if (role) user.role = role;
+    if (canPostJobs !== undefined) user.canPostJobs = canPostJobs;
+    if (canMentor !== undefined) user.canMentor = canMentor;
 
-    await alumni.save();
+    await user.save();
 
     res.status(200).json({
       success: true,
-      message: "Alumni status updated successfully!",
+      message: "User status updated successfully!",
       data: {
-        id: alumni._id,
-        isActive: alumni.isActive,
-        role: alumni.role,
-        canPostJobs: alumni.canPostJobs,
-        canMentor: alumni.canMentor,
+        id: user._id,
+        isActive: user.isActive,
+        role: user.role,
+        canPostJobs: user.canPostJobs,
+        canMentor: user.canMentor,
       },
     });
   } catch (e) {
@@ -263,24 +263,24 @@ const updateAlumniStatus = async (req, res) => {
   }
 };
 
-// Delete alumni (Admin only)
-const deleteAlumni = async (req, res) => {
+// Delete user (Admin only)
+const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
     if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       return res.status(403).json({
         success: false,
-        message: "Only admin can delete alumni!",
+        message: "Only admin can delete user!",
       });
     }
 
-    const alumni = await Alumni.findByIdAndDelete(id);
+    const user = await User.findByIdAndDelete(id);
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
@@ -288,7 +288,7 @@ const deleteAlumni = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Alumni deleted successfully!",
+      message: "User deleted successfully!",
     });
   } catch (e) {
     console.log(e);
@@ -299,20 +299,20 @@ const deleteAlumni = async (req, res) => {
   }
 };
 
-// Get alumni statistics (Admin only)
-const getAlumniStats = async (req, res) => {
+// Get user statistics (Admin only)
+const getUserStats = async (req, res) => {
   try {
-    const totalAlumni = await Alumni.countDocuments();
-    const verifiedAlumni = await Alumni.countDocuments({ accountStatus: 'verified' });
-    const pendingVerification = await Alumni.countDocuments({ accountStatus: 'pending_verification' });
-    const incompleteProfiles = await Alumni.countDocuments({ accountStatus: 'incomplete_profile' });
-    const activeAlumni = await Alumni.countDocuments({ isActive: true });
-    const alumniWithMembership = await Alumni.countDocuments({ 
+    const totalUser = await User.countDocuments();
+    const verifiedUser = await User.countDocuments({ accountStatus: 'verified' });
+    const pendingVerification = await User.countDocuments({ accountStatus: 'pending_verification' });
+    const incompleteProfiles = await User.countDocuments({ accountStatus: 'incomplete_profile' });
+    const activeUser = await User.countDocuments({ isActive: true });
+    const userWithMembership = await User.countDocuments({ 
       'currentMembership.status': 'active' 
     });
 
     // Get department wise count
-    const departmentStats = await Alumni.aggregate([
+    const departmentStats = await User.aggregate([
       {
         $group: {
           _id: "$department",
@@ -325,7 +325,7 @@ const getAlumniStats = async (req, res) => {
     ]);
 
     // Get batch wise count
-    const batchStats = await Alumni.aggregate([
+    const batchStats = await User.aggregate([
       {
         $group: {
           _id: "$batch",
@@ -338,7 +338,7 @@ const getAlumniStats = async (req, res) => {
     ]);
 
     // Get year wise count
-    const yearStats = await Alumni.aggregate([
+    const yearStats = await User.aggregate([
       {
         $group: {
           _id: "$yearOfPassing",
@@ -351,7 +351,7 @@ const getAlumniStats = async (req, res) => {
     ]);
 
     // Get account status breakdown
-    const statusStats = await Alumni.aggregate([
+    const statusStats = await User.aggregate([
       {
         $group: {
           _id: "$accountStatus",
@@ -364,12 +364,12 @@ const getAlumniStats = async (req, res) => {
       success: true,
       data: {
         overview: {
-          totalAlumni,
-          verifiedAlumni,
+          totalUser,
+          verifiedUser,
           pendingVerification,
           incompleteProfiles,
-          activeAlumni,
-          alumniWithMembership,
+          activeUser,
+          userWithMembership,
         },
         statusStats,
         departmentStats,
@@ -389,7 +389,7 @@ const getAlumniStats = async (req, res) => {
 // Get pending verifications (Admin only)
 const getPendingVerifications = async (req, res) => {
   try {
-    const pendingAlumni = await Alumni.find({
+    const pendingUser = await User.find({
       accountStatus: 'pending_verification'
     })
     .select('-password')
@@ -397,8 +397,8 @@ const getPendingVerifications = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: pendingAlumni,
-      count: pendingAlumni.length,
+      data: pendingUser,
+      count: pendingUser.length,
     });
   } catch (e) {
     console.log(e);
@@ -409,13 +409,13 @@ const getPendingVerifications = async (req, res) => {
   }
 };
 
-// Export alumni data to Excel (Admin only)
-const exportAlumniData = async (req, res) => {
+// Export user data to Excel (Admin only)
+const exportUserData = async (req, res) => {
   try {
     if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       return res.status(403).json({
         success: false,
-        message: "Only admin can export alumni data!",
+        message: "Only admin can export user data!",
       });
     }
 
@@ -424,14 +424,14 @@ const exportAlumniData = async (req, res) => {
     const filter = {};
     if (accountStatus) filter.accountStatus = accountStatus;
 
-    const alumni = await Alumni.find(filter)
+    const user = await User.find(filter)
       .select('-password -verificationToken')
       .populate('currentMembership.membershipId', 'name tier')
       .lean();
 
     // Format data for Excel export
-    const excelData = alumni.map(alum => ({
-      'Alumni ID': alum.alumniId || 'N/A',
+    const excelData = user.map(alum => ({
+      'User ID': alum.alumniId || 'N/A',
       'First Name': alum.firstName,
       'Middle Name': alum.middleName || '',
       'Last Name': alum.lastName,
@@ -470,7 +470,7 @@ const exportAlumniData = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Alumni data exported successfully!",
+      message: "User data exported successfully!",
       data: excelData,
       count: excelData.length,
     });
@@ -479,9 +479,9 @@ const exportAlumniData = async (req, res) => {
     // const xlsx = require('xlsx');
     // const ws = xlsx.utils.json_to_sheet(excelData);
     // const wb = xlsx.utils.book_new();
-    // xlsx.utils.book_append_sheet(wb, ws, 'Alumni Data');
+    // xlsx.utils.book_append_sheet(wb, ws, 'User Data');
     // const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
-    // res.setHeader('Content-Disposition', 'attachment; filename=alumni_data.xlsx');
+    // res.setHeader('Content-Disposition', 'attachment; filename=user_data.xlsx');
     // res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     // res.send(buffer);
   } catch (e) {
@@ -507,14 +507,14 @@ const handleImageUpload = async (req, res) => {
 };
 
 module.exports = {
-  getAllAlumni,
-  getAlumniById,
-  verifyAlumni,
-  rejectAlumni,
-  updateAlumniStatus,
-  deleteAlumni,
-  getAlumniStats,
+  getAllUser,
+  getUserById,
+  verifyUser,
+  rejectUser,
+  updateUserStatus,
+  deleteUser,
+  getUserStats,
   getPendingVerifications,
-  exportAlumniData,
+  exportUserData,
   handleImageUpload
 };

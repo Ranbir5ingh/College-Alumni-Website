@@ -70,7 +70,7 @@ const MembershipSchema = new mongoose.Schema(
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
       required: true,
     },
   },

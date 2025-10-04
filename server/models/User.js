@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const AlumniSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
   {
     // Basic Information (Required for initial registration)
     firstName: {
@@ -235,14 +235,14 @@ const AlumniSchema = new mongoose.Schema(
 );
 
 // Virtual for full name
-AlumniSchema.virtual("fullName").get(function () {
+UserSchema.virtual("fullName").get(function () {
   return this.middleName
     ? `${this.firstName} ${this.middleName} ${this.lastName}`
     : `${this.firstName} ${this.lastName}`;
 });
 
 // Virtual to check if membership is active
-AlumniSchema.virtual("hasActiveMembership").get(function () {
+UserSchema.virtual("hasActiveMembership").get(function () {
   if (!this.currentMembership || !this.currentMembership.expiryDate) {
     return false;
   }
@@ -253,7 +253,7 @@ AlumniSchema.virtual("hasActiveMembership").get(function () {
 });
 
 // Virtual to check profile completion
-AlumniSchema.virtual("isProfileComplete").get(function () {
+UserSchema.virtual("isProfileComplete").get(function () {
   // Check if all essential profile fields are filled
   const requiredFields = [
     this.phone,
@@ -272,12 +272,12 @@ AlumniSchema.virtual("isProfileComplete").get(function () {
 });
 
 // Virtual to check if account is verified
-AlumniSchema.virtual("isVerified").get(function () {
+UserSchema.virtual("isVerified").get(function () {
   return this.accountStatus === "verified";
 });
 
 // Create alumni ID automatically on verification
-AlumniSchema.pre("save", function (next) {
+UserSchema.pre("save", function (next) {
   // Generate alumni ID when account is verified
   if (!this.alumniId && this.accountStatus === "verified" && !this.isNew) {
     const year = this.yearOfPassing.toString().slice(-2);
@@ -313,16 +313,16 @@ AlumniSchema.pre("save", function (next) {
 });
 
 // Indexes for better search performance
-AlumniSchema.index({ firstName: 1, lastName: 1 });
-AlumniSchema.index({ batch: 1, department: 1 });
-AlumniSchema.index({ yearOfPassing: 1 });
-AlumniSchema.index({ currentCompany: 1 });
-AlumniSchema.index({ accountStatus: 1 });
-AlumniSchema.index({ "currentMembership.status": 1 });
-AlumniSchema.index({ "currentMembership.expiryDate": 1 });
+UserSchema.index({ firstName: 1, lastName: 1 });
+UserSchema.index({ batch: 1, department: 1 });
+UserSchema.index({ yearOfPassing: 1 });
+UserSchema.index({ currentCompany: 1 });
+UserSchema.index({ accountStatus: 1 });
+UserSchema.index({ "currentMembership.status": 1 });
+UserSchema.index({ "currentMembership.expiryDate": 1 });
 
 // Text index for search functionality
-AlumniSchema.index({
+UserSchema.index({
   firstName: "text",
   lastName: "text",
   email: "text",
@@ -330,4 +330,4 @@ AlumniSchema.index({
   skills: "text",
 });
 
-module.exports = mongoose.model("Alumni", AlumniSchema);
+module.exports = mongoose.model("User", UserSchema);

@@ -1,20 +1,25 @@
+// routes/user/event-routes.js
 const express = require("express");
 const {
-  getEventById,
-  registerForEvent,
+  getAllEvents,
+  getEventById,
+  registerForEvent,
+  unregisterFromEvent,
 } = require("../../controllers/user/event-controller");
-// Assuming you have authController with authMiddleware
 const { authMiddleware } = require("../../controllers/auth/auth-controller");
 
 const router = express.Router();
 
-// GET /api/user/events/:id - Publicly view event details (authMiddleware makes req.user available if logged in)
+// GET /api/user/events - Get all published events (with filters)
+router.get("/", authMiddleware, getAllEvents);
+
+// GET /api/user/events/:id - Get event details by ID
 router.get("/:id", authMiddleware, getEventById);
 
-// POST /api/user/events/:id/register - Alumni register for an event (requires authentication)
+// POST /api/user/events/:id/register - Register for an event
 router.post("/:id/register", authMiddleware, registerForEvent);
 
-// POST /api/user/events/:id/unregister - Alumni unregister
-// router.post("/:id/unregister", authMiddleware, unregisterForEvent);
+// POST /api/user/events/:id/unregister - Unregister from event
+router.post("/:id/unregister", authMiddleware, unregisterFromEvent);
 
 module.exports = router;

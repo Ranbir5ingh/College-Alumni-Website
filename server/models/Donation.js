@@ -4,7 +4,7 @@ const DonationSchema = new mongoose.Schema(
   {
     alumniId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
       required: true,
     },
     donationCampaignId: {
@@ -42,7 +42,7 @@ const DonationSchema = new mongoose.Schema(
       enum: ["pending", "completed", "failed", "refunded"],
       default: "pending",
     },
-    // Donor information (can override from Alumni model for anonymity)
+    // Donor information (can override from User model for anonymity)
     donorName: {
       type: String,
     },
@@ -146,7 +146,7 @@ const DonationSchema = new mongoose.Schema(
     },
     processedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
     },
   },
   {

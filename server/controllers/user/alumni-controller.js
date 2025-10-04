@@ -1,5 +1,5 @@
-// controllers/user/alumni-controller.js
-const Alumni = require("../../models/Alumni");
+// controllers/user/user-controller.js
+const User = require("../../models/User");
 const Donation = require("../../models/Donation"); // ADD THIS
 const DonationCampaign = require("../../models/DonationCampaign"); // ADD THIS
 
@@ -8,7 +8,7 @@ const getMyDashboard = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id)
+    const user = await User.findById(id)
       .select("-password")
       .populate("currentMembership.membershipId", "name tier features")
       .populate({
@@ -23,17 +23,17 @@ const getMyDashboard = async (req, res) => {
         select: "amount donationDate status donationCampaignId"
       });
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     // Get upcoming events user is registered for
     const Event = require("../../models/Event");
     const upcomingEvents = await Event.find({
-      _id: { $in: alumni.eventRegistrations },
+      _id: { $in: user.eventRegistrations },
       date: { $gte: new Date() },
       status: "published"
     })
@@ -42,14 +42,14 @@ const getMyDashboard = async (req, res) => {
       .limit(5);
 
     // Get recent donations
-    const recentDonations = alumni.donations.slice(-3).reverse();
+    const recentDonations = user.donations.slice(-3).reverse();
 
     // Calculate stats
     const stats = {
-      totalEventsAttended: alumni.eventRegistrations.length,
-      totalDonations: alumni.donations.reduce((sum, d) => sum + (d.amount || 0), 0),
-      membershipStatus: alumni.hasActiveMembership ? "active" : "inactive",
-      accountCompleteness: calculateProfileCompleteness(alumni),
+      totalEventsAttended: user.eventRegistrations.length,
+      totalDonations: user.donations.reduce((sum, d) => sum + (d.amount || 0), 0),
+      membershipStatus: user.hasActiveMembership ? "active" : "inactive",
+      accountCompleteness: calculateProfileCompleteness(user),
       upcomingEventsCount: upcomingEvents.length,
     };
 
@@ -57,24 +57,24 @@ const getMyDashboard = async (req, res) => {
       success: true,
       data: {
         profile: {
-          firstName: alumni.firstName,
-          lastName: alumni.lastName,
-          email: alumni.email,
-          profilePicture: alumni.profilePicture,
-          alumniId: alumni.alumniId,
-          batch: alumni.batch,
-          department: alumni.department,
-          degree: alumni.degree,
-          currentCompany: alumni.currentCompany,
-          currentDesignation: alumni.currentDesignation,
-          accountStatus: alumni.accountStatus,
-          isVerified: alumni.isVerified,
-          isProfileComplete: alumni.isProfileComplete,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          profilePicture: user.profilePicture,
+          alumniId: user.alumniId,
+          batch: user.batch,
+          department: user.department,
+          degree: user.degree,
+          currentCompany: user.currentCompany,
+          currentDesignation: user.currentDesignation,
+          accountStatus: user.accountStatus,
+          isVerified: user.isVerified,
+          isProfileComplete: user.isProfileComplete,
         },
         stats,
         upcomingEvents,
         recentDonations,
-        membership: alumni.currentMembership,
+        membership: user.currentMembership,
       },
     });
   } catch (e) {
@@ -87,20 +87,20 @@ const getMyDashboard = async (req, res) => {
 };
 
 // Helper function to calculate profile completeness percentage
-function calculateProfileCompleteness(alumni) {
+function calculateProfileCompleteness(user) {
   const fields = [
-    alumni.phone,
-    alumni.gender,
-    alumni.dateOfBirth,
-    alumni.currentCompany,
-    alumni.currentDesignation,
-    alumni.industry,
-    alumni.address?.city,
-    alumni.address?.state,
-    alumni.address?.country,
-    alumni.linkedInProfile,
-    alumni.profilePicture,
-    alumni.bio,
+    user.phone,
+    user.gender,
+    user.dateOfBirth,
+    user.currentCompany,
+    user.currentDesignation,
+    user.industry,
+    user.address?.city,
+    user.address?.state,
+    user.address?.country,
+    user.linkedInProfile,
+    user.profilePicture,
+    user.bio,
   ];
 
   const filledFields = fields.filter(
@@ -115,7 +115,7 @@ const getMyEvents = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id).populate({
+    const user = await User.findById(id).populate({
       path: "eventRegistrations",
       populate: {
         path: "eventId",
@@ -123,17 +123,17 @@ const getMyEvents = async (req, res) => {
       }
     });
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: alumni.eventRegistrations,
-      count: alumni.eventRegistrations.length,
+      data: user.eventRegistrations,
+      count: user.eventRegistrations.length,
     });
   } catch (e) {
     console.error("Error in getMyEvents:", e);
@@ -149,7 +149,7 @@ const getMyDonations = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id).populate({
+    const user = await User.findById(id).populate({
       path: "donations",
       populate: {
         path: "donationCampaignId",
@@ -157,18 +157,18 @@ const getMyDonations = async (req, res) => {
       }
     });
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     res.status(200).json({
       success: true,
-      data: alumni.donations,
-      total: alumni.donations.reduce((sum, d) => sum + (d.amount || 0), 0),
-      count: alumni.donations.length,
+      data: user.donations,
+      total: user.donations.reduce((sum, d) => sum + (d.amount || 0), 0),
+      count: user.donations.length,
     });
   } catch (e) {
     console.error("Error in getMyDonations:", e);
@@ -184,7 +184,7 @@ const getMyMembership = async (req, res) => {
   try {
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id)
+    const user = await User.findById(id)
       .select("currentMembership membershipHistory")
       .populate("currentMembership.membershipId", "name tier features price description")
       .populate({
@@ -195,19 +195,19 @@ const getMyMembership = async (req, res) => {
         }
       });
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found!",
+        message: "User not found!",
       });
     }
 
     res.status(200).json({
       success: true,
       data: {
-        current: alumni.currentMembership,
-        history: alumni.membershipHistory,
-        hasActiveMembership: alumni.hasActiveMembership,
+        current: user.currentMembership,
+        history: user.membershipHistory,
+        hasActiveMembership: user.hasActiveMembership,
       },
     });
   } catch (e) {
@@ -219,8 +219,8 @@ const getMyMembership = async (req, res) => {
   }
 };
 
-// Search alumni directory (public for verified alumni)
-const searchAlumniDirectory = async (req, res) => {
+// Search user directory (public for verified user)
+const searchUserDirectory = async (req, res) => {
   try {
     const {
       page = 1,
@@ -232,7 +232,7 @@ const searchAlumniDirectory = async (req, res) => {
       currentCompany,
     } = req.query;
 
-    // Only verified alumni can be searched
+    // Only verified user can be searched
     const filter = { accountStatus: "verified", isActive: true };
 
     if (search) {
@@ -248,14 +248,14 @@ const searchAlumniDirectory = async (req, res) => {
     if (yearOfPassing) filter.yearOfPassing = parseInt(yearOfPassing);
     if (currentCompany) filter.currentCompany = { $regex: currentCompany, $options: "i" };
 
-    const alumni = await Alumni.find(filter)
+    const user = await User.find(filter)
       .select("firstName lastName profilePicture alumniId batch department degree yearOfPassing currentCompany currentDesignation industry linkedInProfile privacySettings")
       .sort({ lastName: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit);
 
     // Filter based on privacy settings
-    const filteredAlumni = alumni.map(alum => {
+    const filteredUser = user.map(alum => {
       const alumObj = alum.toObject();
       
       if (!alumObj.privacySettings?.showEmail) delete alumObj.email;
@@ -269,21 +269,21 @@ const searchAlumniDirectory = async (req, res) => {
       return alumObj;
     });
 
-    const totalAlumni = await Alumni.countDocuments(filter);
+    const totalUser = await User.countDocuments(filter);
 
     res.status(200).json({
       success: true,
-      data: filteredAlumni,
+      data: filteredUser,
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(totalAlumni / limit),
-        totalAlumni,
-        hasNextPage: page < Math.ceil(totalAlumni / limit),
+        totalPages: Math.ceil(totalUser / limit),
+        totalUser,
+        hasNextPage: page < Math.ceil(totalUser / limit),
         hasPrevPage: page > 1,
       },
     });
   } catch (e) {
-    console.error("Error in searchAlumniDirectory:", e);
+    console.error("Error in searchUserDirectory:", e);
     res.status(500).json({
       success: false,
       message: "Failed to search directory",
@@ -291,12 +291,12 @@ const searchAlumniDirectory = async (req, res) => {
   }
 };
 
-// Get alumni profile by ID (respects privacy)
-const getAlumniProfileById = async (req, res) => {
+// Get user profile by ID (respects privacy)
+const getUserProfileById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const alumni = await Alumni.findOne({
+    const user = await User.findOne({
       _id: id,
       accountStatus: "verified",
       isActive: true,
@@ -304,14 +304,14 @@ const getAlumniProfileById = async (req, res) => {
       "firstName lastName profilePicture alumniId batch department degree yearOfPassing currentCompany currentDesignation industry linkedInProfile bio email phone privacySettings"
     );
 
-    if (!alumni) {
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Alumni not found or not accessible!",
+        message: "User not found or not accessible!",
       });
     }
 
-    const alumObj = alumni.toObject();
+    const alumObj = user.toObject();
 
     // Apply privacy filters
     if (!alumObj.privacySettings?.showEmail) delete alumObj.email;
@@ -327,10 +327,10 @@ const getAlumniProfileById = async (req, res) => {
       data: alumObj,
     });
   } catch (e) {
-    console.error("Error in getAlumniProfileById:", e);
+    console.error("Error in getUserProfileById:", e);
     res.status(500).json({
       success: false,
-      message: "Failed to fetch alumni profile",
+      message: "Failed to fetch user profile",
     });
   }
 };
@@ -340,6 +340,6 @@ module.exports = {
   getMyEvents,
   getMyDonations,
   getMyMembership,
-  searchAlumniDirectory,
-  getAlumniProfileById,
+  searchUserDirectory,
+  getUserProfileById,
 };

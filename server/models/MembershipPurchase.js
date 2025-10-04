@@ -4,7 +4,7 @@ const MembershipPurchaseSchema = new mongoose.Schema(
   {
     alumniId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
       required: true,
     },
     membershipId: {
@@ -69,7 +69,7 @@ const MembershipPurchaseSchema = new mongoose.Schema(
     },
     cancelledBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
     },
     // Invoice details
     invoiceNumber: {

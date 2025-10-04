@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { registerAlumni } from "../store/auth-slice";
+import { registerAlumni } from "@/store/auth-slice";
 import {
   Select,
   SelectContent,
@@ -21,7 +21,6 @@ function RegisterForm() {
     email: "",
     password: "",
     enrollmentNumber: "",
-    batch: "",
     yearOfJoining: "",
     yearOfPassing: "",
     department: "",
@@ -52,7 +51,6 @@ function RegisterForm() {
       "enrollmentNumber",
       "department",
       "degree",
-      "batch",
       "yearOfJoining",
       "yearOfPassing",
     ];
@@ -298,21 +296,6 @@ function RegisterForm() {
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Batch *
-              </label>
-              <input
-                type="text"
-                name="batch"
-                value={formData.batch}
-                onChange={handleChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                placeholder="e.g., 2018-2022"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Year of Joining *
               </label>
               <input
@@ -375,14 +358,6 @@ function RegisterForm() {
                 </span>
                 <span className="text-sm text-gray-800 font-medium">
                   {formData.enrollmentNumber}
-                </span>
-              </div>
-              <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">
-                <span className="text-sm font-semibold text-gray-600">
-                  Batch:
-                </span>
-                <span className="text-sm text-gray-800 font-medium">
-                  {formData.batch}
                 </span>
               </div>
               <div className="flex justify-between p-2.5 bg-gray-50 rounded-md">

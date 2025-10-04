@@ -138,7 +138,7 @@ const DonationCampaignSchema = new mongoose.Schema(
       images: [String],
       postedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Alumni",
+        ref: "User",
       },
     }],
     // Contact person
@@ -169,16 +169,16 @@ const DonationCampaignSchema = new mongoose.Schema(
     // Admin details
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
       required: true,
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
     },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Alumni",
+      ref: "User",
     },
     approvedAt: {
       type: Date,

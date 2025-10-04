@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { loginAlumni } from "../store/auth-slice";
+import { loginAlumni } from "@/store/auth-slice";
 
 function LoginForm() {
   const dispatch = useDispatch();
