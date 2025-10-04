@@ -30,7 +30,6 @@ const getAllEvents = async (req, res) => {
     }
 
     if (eventType) filter.eventType = eventType;
-    if (category) filter.category = category;
     if (isFeatured) filter.isFeatured = isFeatured === "true";
 
     // Filter for upcoming events
@@ -40,12 +39,12 @@ const getAllEvents = async (req, res) => {
 
     const events = await Event.find(filter)
       .select(
-        "title shortDescription coverImage startDateTime endDateTime venue isOnline eventType category isFeatured registrationFee maxAttendees currentAttendees isRegistrationOpen tags"
+        "title description coverImage startDateTime endDateTime venue isOnline eventType isFeatured registrationFee maxAttendees currentAttendees tags registrationStartDate registrationEndDate registrationRequired"
       )
       .sort({ startDateTime: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .lean({ virtuals: true });
+      .lean();
 
     // Check if user is registered for each event
     const registrations = await EventRegistration.find({
@@ -58,10 +57,14 @@ const getAllEvents = async (req, res) => {
       registrations.map((r) => r.eventId.toString())
     );
 
-    const eventsWithRegistration = events.map((event) => ({
-      ...event,
-      isRegistered: registeredEventIds.has(event._id.toString()),
-    }));
+    // Add computed fields to each event
+    const eventsWithRegistration = events.map((event) => {
+      const eventWithComputed = Event.addComputedFields(event);
+      return {
+        ...eventWithComputed,
+        isRegistered: registeredEventIds.has(event._id.toString()),
+      };
+    });
 
     const totalEvents = await Event.countDocuments(filter);
 
@@ -96,7 +99,7 @@ const getEventById = async (req, res) => {
       status: "published",
     })
       .populate("createdBy", "firstName lastName")
-      .lean({ virtuals: true });
+      .lean();
 
     if (!event) {
       return res.status(404).json({
@@ -104,6 +107,9 @@ const getEventById = async (req, res) => {
         message: "Event not found or not published!",
       });
     }
+
+    // Add computed fields
+    const eventWithComputed = Event.addComputedFields(event);
 
     // Check if user is registered
     let isRegistered = false;
@@ -116,10 +122,12 @@ const getEventById = async (req, res) => {
       isRegistered = !!registration;
     }
 
+    console.log(eventWithComputed.isRegistrationOpen, eventWithComputed.isFull, eventWithComputed.isUpcoming);
+    
     res.status(200).json({
       success: true,
       data: {
-        ...event,
+        ...eventWithComputed,
         isRegistered,
       },
     });
@@ -138,6 +146,7 @@ const registerForEvent = async (req, res) => {
     const { id: eventId } = req.params;
     const { id: alumniId } = req.user;
 
+    // Don't use .lean() here - we need the document methods
     const event = await Event.findById(eventId);
 
     if (!event) {
@@ -155,8 +164,8 @@ const registerForEvent = async (req, res) => {
       });
     }
 
-    // Check if registration is open
-    if (!event.isRegistrationOpen) {
+    // Use the document methods to check registration status
+    if (!event.getIsRegistrationOpen()) {
       return res.status(400).json({
         success: false,
         message: "Registration is closed for this event!",
@@ -178,7 +187,7 @@ const registerForEvent = async (req, res) => {
     }
 
     // Check if event is full
-    if (event.maxAttendees && event.currentAttendees >= event.maxAttendees) {
+    if (event.getIsFull()) {
       return res.status(400).json({
         success: false,
         message: "Event is full!",
@@ -196,7 +205,7 @@ const registerForEvent = async (req, res) => {
       alumniId,
       registrationDate: new Date(),
       status: event.registrationFee > 0 ? "pending_payment" : "confirmed",
-      paymentStatus: event.registrationFee > 0 ? "pending" : "not_applicable",
+      paymentStatus: event.registrationFee > 0 ? "pending" : "not_required",
       amountPaid: event.registrationFee || 0,
       attendeeDetails: {
         name: `${user.firstName} ${user.lastName}`,
@@ -262,10 +271,10 @@ const unregisterFromEvent = async (req, res) => {
     const event = await Event.findById(eventId);
 
     // Check if event has already started
-    if (new Date(event.startDateTime) <= new Date()) {
+    if (!event.getIsUpcoming()) {
       return res.status(400).json({
         success: false,
-        message: "Cannot cancel registration for an event that has started!",
+        message: "Cannot cancel registration for an event that has started or ended!",
       });
     }
 

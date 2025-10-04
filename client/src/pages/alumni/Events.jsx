@@ -1,180 +1,256 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, MapPin, Users, Clock } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllEvents, clearError } from "@/store/user/event-slice";
+import AlumniEventCard from "@/components/alumni/AlumniEventCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Search, Calendar, Filter, X } from "lucide-react";
 
-export default function EventsPage() {
-  const upcomingEvents = [
-    {
-      title: "NYC Alumni Networking Mixer",
-      date: "April 18, 2024",
-      time: "6:00 PM - 9:00 PM",
-      location: "The Rooftop at 230 Fifth, Manhattan, NY",
-      attendees: 45,
-      category: "Networking",
-      description: "Join fellow alumni in the Big Apple for an evening of networking, drinks, and city views.",
-    },
-    {
-      title: "Career Development Workshop",
-      date: "April 25, 2024",
-      time: "2:00 PM - 4:00 PM",
-      location: "Virtual Event",
-      attendees: 120,
-      category: "Professional Development",
-      description: "Learn essential skills for career advancement in today's competitive job market.",
-    },
-    {
-      title: "Annual Golf Tournament",
-      date: "May 15, 2024",
-      time: "8:00 AM - 5:00 PM",
-      location: "Pebble Beach Golf Links, CA",
-      attendees: 80,
-      category: "Recreation",
-      description: "A day of golf, networking, and fundraising for student scholarships.",
-    },
-    {
-      title: "Tech Industry Panel Discussion",
-      date: "May 22, 2024",
-      time: "7:00 PM - 8:30 PM",
-      location: "Silicon Valley Campus, CA",
-      attendees: 200,
-      category: "Industry",
-      description: "Hear from alumni leaders in tech about industry trends and opportunities.",
-    },
-  ]
+function AlumniEventsPage() {
+  const dispatch = useDispatch();
+  const { events, pagination, isLoading, error } = useSelector((state) => state.userEvent);
 
-  const pastEvents = [
-    {
-      title: "Homecoming Weekend 2023",
-      date: "October 14-16, 2023",
-      location: "Main Campus",
-      attendees: 2500,
-      category: "Homecoming",
-      description: "Three days of celebration, campus tours, and reconnecting with classmates.",
-    },
-    {
-      title: "Los Angeles Alumni Gala",
-      date: "September 8, 2023",
-      location: "Beverly Hills Hotel, CA",
-      attendees: 300,
-      category: "Gala",
-      description: "An elegant evening celebrating alumni achievements and raising funds for scholarships.",
-    },
-    {
-      title: "Young Alumni Happy Hour",
-      date: "August 15, 2023",
-      location: "Chicago, IL",
-      attendees: 75,
-      category: "Social",
-      description: "Recent graduates gathered for drinks and networking in the Windy City.",
-    },
-  ]
+  const [filters, setFilters] = useState({
+    search: "",
+    eventType: "",
+    upcoming: "true",
+    page: 1,
+    limit: 12,
+  });
+
+  const [searchInput, setSearchInput] = useState("");
+
+  useEffect(() => {
+    dispatch(getAllEvents(filters));
+  }, [dispatch, filters]);
+
+  const handleSearch = () => {
+    setFilters(prev => ({ ...prev, search: searchInput, page: 1 }));
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      search: "",
+      eventType: "",
+      upcoming: "true",
+      page: 1,
+      limit: 12,
+    });
+    setSearchInput("");
+  };
+
+  const handlePageChange = (newPage) => {
+    setFilters(prev => ({ ...prev, page: newPage }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleViewDetails = (eventId) => {
+    window.location.href = `/alumni/events/${eventId}`;
+  };
+
+  const hasActiveFilters = filters.search || filters.eventType || filters.upcoming === "false";
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="py-16 lg:py-24">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-balance mb-6">BBSBEC Alumni Events</h1>
-            <p className="text-xl text-muted-foreground text-balance">
-              Connect with fellow BBSBEC engineering alumni at networking events, technical workshops, and social
-              gatherings across India and around the world.
-            </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Events</h1>
+          <p className="text-gray-600 mt-1">
+            Discover and register for upcoming alumni events
+          </p>
+        </div>
+        <Calendar className="text-blue-600" size={40} />
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="flex-1 flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Input
+                placeholder="Search events..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={handleSearch} className="bg-blue-600 hover:bg-blue-700">
+              Search
+            </Button>
           </div>
         </div>
-      </section>
 
-      {/* Events Tabs */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Tabs defaultValue="upcoming" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8">
-              <TabsTrigger value="upcoming">Upcoming Events</TabsTrigger>
-              <TabsTrigger value="past">Past Events</TabsTrigger>
-            </TabsList>
+        {/* Filters Row */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">Filters:</span>
+          </div>
 
-            <TabsContent value="upcoming" className="space-y-6">
-              <div className="grid gap-6">
-                {upcomingEvents.map((event, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                          <CardTitle className="text-xl mb-2">{event.title}</CardTitle>
-                          <CardDescription>{event.description}</CardDescription>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Badge variant="secondary">{event.category}</Badge>
-                          <Button>Register Now</Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-4 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {event.date}
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          {event.time}
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          {event.location}
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Users className="h-4 w-4" />
-                          {event.attendees} registered
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+          <Select
+            value={filters.eventType}
+            onValueChange={(value) => handleFilterChange("eventType", value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Event Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="reunion">Reunion</SelectItem>
+              <SelectItem value="networking">Networking</SelectItem>
+              <SelectItem value="seminar">Seminar</SelectItem>
+              <SelectItem value="workshop">Workshop</SelectItem>
+              <SelectItem value="webinar">Webinar</SelectItem>
+              <SelectItem value="social">Social</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <TabsContent value="past" className="space-y-6">
-              <div className="grid gap-6">
-                {pastEvents.map((event, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                          <CardTitle className="text-xl mb-2">{event.title}</CardTitle>
-                          <CardDescription>{event.description}</CardDescription>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Badge variant="outline">{event.category}</Badge>
-                          <Button variant="outline">View Photos</Button>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid md:grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {event.date}
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          {event.location}
-                        </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Users className="h-4 w-4" />
-                          {event.attendees} attended
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+          <Select
+            value={filters.upcoming}
+            onValueChange={(value) => handleFilterChange("upcoming", value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Show Events" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Upcoming Events</SelectItem>
+              <SelectItem value="false">All Events</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button
+              onClick={handleClearFilters}
+              variant="outline"
+              size="sm"
+              className="text-gray-600"
+            >
+              <X size={16} className="mr-2" />
+              Clear Filters
+            </Button>
+          )}
         </div>
-      </section>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+          <p className="text-red-800">{error.message || "Failed to load events"}</p>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading events...</p>
+          </div>
+        </div>
+      ) : events.length === 0 ? (
+        /* Empty State */
+        <div className="text-center py-20">
+          <Calendar className="w-24 h-24 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            No Events Found
+          </h3>
+          <p className="text-gray-600 mb-6">
+            {hasActiveFilters
+              ? "Try adjusting your filters to see more events"
+              : "There are no upcoming events at the moment"}
+          </p>
+          {hasActiveFilters && (
+            <Button onClick={handleClearFilters} variant="outline">
+              Clear Filters
+            </Button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Events Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((event) => (
+              <AlumniEventCard
+                key={event._id}
+                event={event}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                variant="outline"
+              >
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-2">
+                {[...Array(pagination.totalPages)].map((_, idx) => {
+                  const pageNum = idx + 1;
+                  // Show first page, last page, current page, and pages around current
+                  if (
+                    pageNum === 1 ||
+                    pageNum === pagination.totalPages ||
+                    Math.abs(pageNum - pagination.currentPage) <= 1
+                  ) {
+                    return (
+                      <Button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        variant={pageNum === pagination.currentPage ? "default" : "outline"}
+                        className={pageNum === pagination.currentPage ? "bg-blue-600" : ""}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  } else if (
+                    pageNum === pagination.currentPage - 2 ||
+                    pageNum === pagination.currentPage + 2
+                  ) {
+                    return <span key={pageNum} className="text-gray-400">...</span>;
+                  }
+                  return null;
+                })}
+              </div>
+
+              <Button
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                variant="outline"
+              >
+                Next
+              </Button>
+            </div>
+          )}
+
+          {/* Results Info */}
+          <div className="text-center text-sm text-gray-600">
+            Showing {events.length} of {pagination.totalEvents} events
+          </div>
+        </>
+      )}
     </div>
-  )
+  );
 }
+
+export default AlumniEventsPage;

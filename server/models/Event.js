@@ -50,11 +50,19 @@ const EventSchema = new mongoose.Schema(
       type: String,
     },
     // Registration details
+    registrationRequired: {
+      type: Boolean,
+      default: true,
+    },
     registrationStartDate: {
       type: Date,
     },
     registrationEndDate: {
       type: Date,
+    },
+    maxAttendees: {
+      type: Number,
+      default: null, // null means unlimited
     },
     currentAttendees: {
       type: Number,
@@ -150,27 +158,49 @@ const EventSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
   }
 );
 
-// Virtual to check if event is full
-EventSchema.virtual('isFull').get(function() {
-  if (this.maxAttendees === null) return false;
+// Helper methods instead of virtuals (works better with lean)
+EventSchema.methods.getIsFull = function() {
+  if (this.maxAttendees === null || this.maxAttendees === undefined) return false;
   return this.currentAttendees >= this.maxAttendees;
-});
+};
 
-// Virtual to check if registration is open
-EventSchema.virtual('isRegistrationOpen').get(function() {
+EventSchema.methods.getIsRegistrationOpen = function() {
   const now = new Date();
   const registrationOpen = !this.registrationStartDate || now >= this.registrationStartDate;
   const registrationNotClosed = !this.registrationEndDate || now <= this.registrationEndDate;
-  return this.registrationRequired && registrationOpen && registrationNotClosed && !this.isFull;
-});
+  const isFull = this.getIsFull();
+  return this.registrationRequired && registrationOpen && registrationNotClosed && !isFull;
+};
 
-// Virtual to check if event is upcoming
-EventSchema.virtual('isUpcoming').get(function() {
+EventSchema.methods.getIsUpcoming = function() {
   return new Date(this.startDateTime) > new Date();
-});
+};
+
+// Static helper to add computed fields to lean objects
+EventSchema.statics.addComputedFields = function(eventObj) {
+  const isFull = eventObj.maxAttendees !== null && 
+                 eventObj.maxAttendees !== undefined && 
+                 eventObj.currentAttendees >= eventObj.maxAttendees;
+  
+  const now = new Date();
+  const registrationOpen = !eventObj.registrationStartDate || now >= new Date(eventObj.registrationStartDate);
+  const registrationNotClosed = !eventObj.registrationEndDate || now <= new Date(eventObj.registrationEndDate);
+  const isRegistrationOpen = eventObj.registrationRequired && registrationOpen && registrationNotClosed && !isFull;
+  
+  const isUpcoming = new Date(eventObj.startDateTime) > now;
+
+  return {
+    ...eventObj,
+    isFull,
+    isRegistrationOpen,
+    isUpcoming
+  };
+};
 
 // Indexes
 EventSchema.index({ startDateTime: 1 });

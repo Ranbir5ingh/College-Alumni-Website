@@ -403,7 +403,7 @@ function EventDetailsPage() {
                 <Check className="text-green-600" size={20} />
                 <span className="text-green-600 font-medium">Already Registered</span>
               </div>
-            ) : !event.isRegistrationOpen ? (
+            ) : event.isRegistrationOpen ? (
               <Button
                 onClick={() => setShowRegisterDialog(true)}
                 size="lg"

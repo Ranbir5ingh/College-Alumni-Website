@@ -34,12 +34,13 @@ const getMyDashboard = async (req, res) => {
     const Event = require("../../models/Event");
     const upcomingEvents = await Event.find({
       _id: { $in: user.eventRegistrations },
-      date: { $gte: new Date() },
+      Date: { $gte: new Date() },
       status: "published"
     })
       .select("title date location eventType")
       .sort({ date: 1 })
       .limit(5);
+
 
     // Get recent donations
     const recentDonations = user.donations.slice(-3).reverse();

@@ -8,7 +8,6 @@ import DashboardPage from "./pages/alumni/DashboardPage";
 import ProfilePage from "./pages/alumni/ProfilePage";
 import About from "./pages/public/About";
 import AlumniDirectory from "./pages/alumni/AlumniDirectory";
-import Events from "./pages/alumni/Events";
 import News from "./pages/alumni/News";
 import Gallery from "./pages/alumni/Gallery";
 import Careers from "./pages/alumni/Careers";
@@ -23,6 +22,7 @@ import AdminEvents from "./pages/admin/Events";
 import AlumniManagement from "./pages/admin/AlumniManagement";
 import EventDetailsPage from "./components/common/EventDetails";
 import ResetPasswordPage from "./pages/alumni/ResetPasswordPage";
+import AlumniEventsPage from "./pages/alumni/Events";
 
 
 
@@ -61,7 +61,7 @@ function App() {
           <Route path="contact" element={<ContactPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="directory" element={<AlumniDirectory />} />
-          <Route path="events" element={<Events />} />
+          <Route path="events" element={<AlumniEventsPage />} />
           <Route path="news" element={<News />} />
           <Route path="gallery" element={<Gallery />} />
           <Route path="careers" element={<Careers />} />
@@ -81,7 +81,7 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="directory" element={<AlumniDirectory />} />
-          <Route path="events" element={<Events />} />
+          <Route path="events" element={<AlumniEventsPage />} />
           <Route path="news" element={<News />} />
           <Route path="gallery" element={<Gallery />} />
           <Route path="careers" element={<Careers />} />
