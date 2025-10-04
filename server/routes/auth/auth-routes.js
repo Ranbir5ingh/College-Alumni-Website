@@ -9,7 +9,9 @@ const {
   authMiddleware,
   getAlumniProfile,
   updateAlumniProfile,
-  changePassword,
+  requestPasswordReset,
+  verifyResetToken,
+  resetPassword,
 } = require("../../controllers/auth/auth-controller");
 
 const router = express.Router();
@@ -19,10 +21,13 @@ router.post("/register", registerAlumni);
 router.post("/login", loginAlumni);
 router.post("/logout", logoutAlumni);
 
+// Password reset routes (public - no auth required)
+router.get("/verify-reset-token/:token", verifyResetToken);
+router.post("/reset-password/:token", resetPassword);
+
 // Protected routes
 router.get("/check-auth", authMiddleware, async (req, res) => {
   try {
-    // Fetch full user data
     const Alumni = require("../../models/Alumni");
     const user = await Alumni.findById(req.user.id)
       .select("-password")
@@ -38,28 +43,7 @@ router.get("/check-auth", authMiddleware, async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Authenticated user!",
-      user: {
-        email: user.email,
-        role: user.role,
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        accountStatus: user.accountStatus,
-        isVerified: user.isVerified,
-        isProfileComplete: user.isProfileComplete,
-        alumniId: user.alumniId,
-        batch: user.batch,
-        department: user.department,
-        degree: user.degree,
-        yearOfPassing: user.yearOfPassing,
-        yearOfJoining: user.yearOfJoining,
-        phone: user.phone,
-        enrollmentNumber: user.enrollmentNumber,
-        canPostJobs: user.canPostJobs,
-        canMentor: user.canMentor,
-        currentMembership: user.currentMembership,
-        hasActiveMembership: user.hasActiveMembership,
-      },
+      user,
     });
   } catch (error) {
     console.log(error);
@@ -72,9 +56,11 @@ router.get("/check-auth", authMiddleware, async (req, res) => {
 
 router.get("/profile", authMiddleware, getAlumniProfile);
 router.put("/profile/:id", authMiddleware, updateAlumniProfile);
-router.put("/change-password", authMiddleware, changePassword);
 
-// New routes for profile completion and verification
+// Password reset request (protected - requires auth)
+router.post("/request-password-reset", authMiddleware, requestPasswordReset);
+
+// Profile completion and verification
 router.put("/complete-profile", authMiddleware, completeProfile);
 router.post("/request-verification", authMiddleware, requestVerification);
 

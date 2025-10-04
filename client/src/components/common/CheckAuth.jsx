@@ -23,6 +23,7 @@ const USER_ROLES = {
 function CheckAuth({ children }) {
   const location = useLocation();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
+  console.log("hello")
 
   // Define route paths
   const authRoutePrefix = "/auth";
@@ -66,9 +67,9 @@ function CheckAuth({ children }) {
     // b. Account Status Redirection (Only applies to alumni routes, not auth/admin/status pages)
     if (isAlumniRoute && !isAdmin && !isStatusPage) {
       // Redirect users based on their account status
-      if (accountStatus === ACCOUNT_STATUS.INCOMPLETE_PROFILE) {
-        return <Navigate to={completeProfilePath} replace />;
-      }
+      // if (accountStatus === ACCOUNT_STATUS.INCOMPLETE_PROFILE) {
+      //   return <Navigate to={completeProfilePath} replace />;
+      // }
       
       // if (accountStatus === ACCOUNT_STATUS.PENDING_VERIFICATION || accountStatus === ACCOUNT_STATUS.REJECTED) {
       //   // Redirect to pending verification or a status page if account is rejected/pending

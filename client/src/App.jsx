@@ -21,6 +21,8 @@ import AdminLayout from "./components/layouts/layouts/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminEvents from "./pages/admin/Events";
 import AlumniManagement from "./pages/admin/AlumniManagement";
+import EventDetailsPage from "./components/common/EventDetails";
+import ResetPasswordPage from "./pages/alumni/ResetPasswordPage";
 
 
 
@@ -44,6 +46,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Routes>
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         {/* Public Routes - Uses PublicLayout */}
         <Route
           path="/"
@@ -63,6 +66,7 @@ function App() {
           <Route path="gallery" element={<Gallery />} />
           <Route path="careers" element={<Careers />} />
           <Route path="giveback" element={<GiveBack />} />
+          
         </Route>
 
         {/* Alumni Routes - Uses AlumniLayout (Protected) */}
@@ -82,6 +86,8 @@ function App() {
           <Route path="gallery" element={<Gallery />} />
           <Route path="careers" element={<Careers />} />
           <Route path="giveback" element={<GiveBack />} />
+          <Route path="events/:id" element={<EventDetailsPage />} />
+  
           
         </Route>
 
@@ -96,6 +102,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="events" element={<AdminEvents />} />
           <Route path="alumni" element={<AlumniManagement />} />
+          <Route path="events/:id" element={<EventDetailsPage />} />
 
         </Route>
 

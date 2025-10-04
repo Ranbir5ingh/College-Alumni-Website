@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Alumni = require("../../models/Alumni");
+const crypto = require("crypto");
+const sendEmail = require("../../helpers/sendEmail");
 
 // Register Alumni (Basic Registration)
 const registerAlumni = async (req, res) => {
@@ -298,25 +300,7 @@ const loginAlumni = async (req, res) => {
     res.cookie("token", token, { httpOnly: true, secure: false }).json({
       success: true,
       message: "Logged in successfully",
-      user: {
-        email: checkAlumni.email,
-        role: checkAlumni.role,
-        id: checkAlumni._id,
-        firstName: checkAlumni.firstName,
-        lastName: checkAlumni.lastName,
-        accountStatus: checkAlumni.accountStatus,
-        isVerified: checkAlumni.isVerified,
-        isProfileComplete: checkAlumni.isProfileComplete,
-        alumniId: checkAlumni.alumniId,
-        batch: checkAlumni.batch,
-        department: checkAlumni.department,
-        degree: checkAlumni.degree,
-        yearOfPassing: checkAlumni.yearOfPassing,
-        phone: checkAlumni.phone,
-        enrollmentNumber: checkAlumni.enrollmentNumber,
-        canPostJobs: checkAlumni.canPostJobs,
-        canMentor: checkAlumni.canMentor,
-      },
+      user: checkAlumni,
     });
   } catch (e) {
     console.log(e);
@@ -451,13 +435,11 @@ const updateAlumniProfile = async (req, res) => {
   }
 };
 
-// Change Password
-const changePassword = async (req, res) => {
+const requestPasswordReset = async (req, res) => {
   try {
-    const { currentPassword, newPassword } = req.body;
     const { id } = req.user;
 
-    const alumni = await Alumni.findById(id).select("+password");
+    const alumni = await Alumni.findById(id);
     if (!alumni) {
       return res.status(404).json({
         success: false,
@@ -465,38 +447,221 @@ const changePassword = async (req, res) => {
       });
     }
 
-    // Check current password
-    const isCurrentPasswordCorrect = await bcrypt.compare(
-      currentPassword,
-      alumni.password
-    );
+    // Generate password reset token (valid for 1 hour)
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
-    if (!isCurrentPasswordCorrect) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password is incorrect!",
-      });
-    }
-
-    // Hash new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
-
-    // Update password
-    alumni.password = hashedNewPassword;
+    // Store hashed token and expiry in database
+    alumni.passwordResetToken = hashedToken;
+    alumni.passwordResetExpires = Date.now() + 3600000; // 1 hour
     await alumni.save();
+
+    // Create reset URL
+    const resetUrl = `${process.env.CLIENT_BASE_URL}/reset-password/${resetToken}`;
+
+    // Email HTML template
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+          .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+          .button { display: inline-block; padding: 12px 30px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+          .warning { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Password Reset Request</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${alumni.firstName},</p>
+            <p>We received a request to reset your password for your BBSBEC Alumni Portal account.</p>
+            <p>Click the button below to reset your password:</p>
+            <center>
+              <a href="${resetUrl}" class="button">Reset Password</a>
+            </center>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all; color: #2563eb;">${resetUrl}</p>
+            <div class="warning">
+              <strong>⚠️ Security Notice:</strong>
+              <ul>
+                <li>This link will expire in 1 hour</li>
+                <li>If you didn't request this password reset, please ignore this email</li>
+                <li>Never share this link with anyone</li>
+              </ul>
+            </div>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} BBSBEC Alumni Portal. All rights reserved.</p>
+            <p>This is an automated email. Please do not reply.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send email
+    await sendEmail(
+      alumni.email,
+      "Password Reset Request - BBSBEC Alumni Portal",
+      emailHtml
+    );
 
     res.status(200).json({
       success: true,
-      message: "Password changed successfully!",
+      message: "Password reset link has been sent to your email!",
     });
   } catch (e) {
-    console.log(e);
+    console.error("Error in requestPasswordReset:", e);
+    res.status(500).json({
+      success: false,
+      message: "Failed to send password reset email. Please try again later.",
+    });
+  }
+};
+
+// Verify Reset Token (check if token is valid)
+const verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Hash the token from URL
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    // Find alumni with valid token
+    const alumni = await Alumni.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!alumni) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired password reset token!",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Token is valid",
+      email: alumni.email, // Return email for display (masked)
+    });
+  } catch (e) {
+    console.error("Error in verifyResetToken:", e);
     res.status(500).json({
       success: false,
       message: "Some error occurred!",
     });
   }
 };
+
+// Reset Password (actually changes the password)
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long!",
+      });
+    }
+
+    // Hash the token from URL
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    // Find alumni with valid token
+    const alumni = await Alumni.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    }).select("+password");
+
+    if (!alumni) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or expired password reset token!",
+      });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update password and clear reset token
+    alumni.password = hashedPassword;
+    alumni.passwordResetToken = undefined;
+    alumni.passwordResetExpires = undefined;
+    await alumni.save();
+
+    // Send confirmation email
+    const confirmationEmailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #10b981; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+          .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+          .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+          .success { background-color: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>✓ Password Changed Successfully</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${alumni.firstName},</p>
+            <div class="success">
+              <strong>Your password has been changed successfully!</strong>
+            </div>
+            <p>Your BBSBEC Alumni Portal account password was changed on ${new Date().toLocaleString()}.</p>
+            <p>If you did not make this change, please contact us immediately at <a href="mailto:${process.env.EMAIL_USER}">${process.env.EMAIL_USER}</a></p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} BBSBEC Alumni Portal. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await sendEmail(
+      alumni.email,
+      "Password Changed Successfully - BBSBEC Alumni Portal",
+      confirmationEmailHtml
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully! You can now login with your new password.",
+    });
+  } catch (e) {
+    console.error("Error in resetPassword:", e);
+    res.status(500).json({
+      success: false,
+      message: "Some error occurred while resetting password!",
+    });
+  }
+};
+
 
 module.exports = {
   registerAlumni,
@@ -507,5 +672,7 @@ module.exports = {
   authMiddleware,
   getAlumniProfile,
   updateAlumniProfile,
-  changePassword,
+  requestPasswordReset,
+  verifyResetToken,
+  resetPassword,
 };

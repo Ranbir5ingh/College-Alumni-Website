@@ -159,6 +159,25 @@ export const updateProfile = createAsyncThunk(
   }
 );
 
+// Request Password Reset (kept - used in ProfilePage dialog)
+export const requestPasswordReset = createAsyncThunk(
+  "auth/requestPasswordReset",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/request-password-reset",
+        {},
+        { withCredentials: true }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to send reset email" }
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -280,6 +299,16 @@ const authSlice = createSlice({
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;
+        state.error = action.payload;
+      })
+      // Request Password Reset (kept - doesn't affect global isLoading much)
+      .addCase(requestPasswordReset.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(requestPasswordReset.fulfilled, (state) => {
+        state.error = null;
+      })
+      .addCase(requestPasswordReset.rejected, (state, action) => {
         state.error = action.payload;
       });
   },

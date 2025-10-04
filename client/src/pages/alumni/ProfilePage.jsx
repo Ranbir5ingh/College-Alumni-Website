@@ -4,9 +4,15 @@ import {
   completeProfile,
   updateProfile,
   requestVerification,
+  requestPasswordReset,
   clearError,
   getAlumniProfile,
 } from "../../store/auth-slice";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -14,523 +20,631 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ArrowUpCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Loader2, Edit, Save, X, CheckCircle, Clock, AlertCircle, KeyRound } from "lucide-react";
 import ProfilePictureUpload from "@/components/common/pfpUpload";
-
-// Helper function to check for empty strings/nulls in required fields
-const isFormValid = (data) => {
-  // Check essential fields based on the Mongoose schema's implicit completion requirements
-  const requiredFields = [
-    data.profilePicture,
-    data.phone,
-    data.currentDesignation,
-    data.currentCompany,
-    data.industry, // Mapped from your Mongoose schema
-    data.address.country,
-    data.address.state,
-    // Note: gender and dateOfBirth are not required here but can be added if backend enforces
-  ];
-
-  // We check for falsy values (null, undefined, empty string)
-  return requiredFields.every(field => field !== null && field !== undefined && field !== "");
-};
 
 function ProfilePage() {
   const dispatch = useDispatch();
   const { user, isLoading: authLoading, error } = useSelector((state) => state.auth);
 
-  // Determine the mode based on the user object
-  const isProfileIncomplete = user && user.accountStatus === 'incomplete_profile';
-  const isCompleteMode = user && isProfileIncomplete;
-  const isEditMode = user && !isProfileIncomplete; // If complete or already pending verification
-
-  // Use local state for form data, initialized with user data or empty strings, using Mongoose field names
-  const [formData, setFormData] = useState({
-    profilePicture: user?.profilePicture || "", // Mongoose field name
-    bio: user?.bio || "",
-    phone: user?.phone || "", // Mongoose field name
-    gender: user?.gender || "Prefer not to say",
-    dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : "",
-    currentDesignation: user?.currentDesignation || "",
-    currentCompany: user?.currentCompany || "",
-    industry: user?.industry || "", // Mongoose field name
-    linkedInProfile: user?.linkedInProfile || "",
-    address: { // Mongoose embedded object
-        street: user?.address?.street || "",
-        city: user?.address?.city || "",
-        state: user?.address?.state || "",
-        country: user?.address?.country || "",
-        pincode: user?.address?.pincode || "",
-    },
-  });
-
-  // State for PFP component
+  const [isEditMode, setIsEditMode] = useState(false);
   const [imageFile, setImageFile] = useState(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState(user?.profilePicture || "");
+  const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [imageLoadingState, setImageLoadingState] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [localSuccess, setLocalSuccess] = useState(null);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false);
+  const [passwordResetSuccess, setPasswordResetSuccess] = useState(false);
 
-  // Reset/Fetch profile on mount/user change
+  const [formData, setFormData] = useState({
+    profilePicture: "",
+    bio: "",
+    phone: "",
+    gender: "Prefer not to say",
+    dateOfBirth: "",
+    currentDesignation: "",
+    currentCompany: "",
+    industry: "",
+    linkedInProfile: "",
+    address: { street: "", city: "", state: "", country: "", pincode: "" },
+  });
+
   useEffect(() => {
     if (!user && !authLoading) {
-        dispatch(getAlumniProfile());
-    } else if (user) {
-        // Update local form state when user data changes (e.g., after initial fetch)
-        setFormData({
-            profilePicture: user.profilePicture || "",
-            bio: user.bio || "",
-            phone: user.phone || "",
-            gender: user.gender || "Prefer not to say",
-            dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : "",
-            currentDesignation: user.currentDesignation || "",
-            currentCompany: user.currentCompany || "",
-            industry: user.industry || "",
-            linkedInProfile: user.linkedInProfile || "",
-            address: {
-                street: user.address?.street || "",
-                city: user.address?.city || "",
-                state: user.address?.state || "",
-                country: user.address?.country || "",
-                pincode: user.address?.pincode || "",
-            },
-        });
-        setUploadedImageUrl(user.profilePicture || "");
+      dispatch(getAlumniProfile());
     }
-  }, [user, dispatch, authLoading]);
+  }, [user, authLoading, dispatch]);
 
-  // Update form data with the new uploaded image URL
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        profilePicture: user.profilePicture || "",
+        bio: user.bio || "",
+        phone: user.phone || "",
+        gender: user.gender || "Prefer not to say",
+        dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : "",
+        currentDesignation: user.currentDesignation || "",
+        currentCompany: user.currentCompany || "",
+        industry: user.industry || "",
+        linkedInProfile: user.linkedInProfile || "",
+        address: {
+          street: user.address?.street || "",
+          city: user.address?.city || "",
+          state: user.address?.state || "",
+          country: user.address?.country || "",
+          pincode: user.address?.pincode || "",
+        },
+      });
+      setUploadedImageUrl(user.profilePicture || "");
+      
+      if (user.accountStatus === 'incomplete_profile') {
+        setIsEditMode(true);
+      }
+    }
+  }, [user]);
+
   useEffect(() => {
     if (uploadedImageUrl && uploadedImageUrl !== formData.profilePicture) {
-      setFormData((prev) => ({
-        ...prev,
-        profilePicture: uploadedImageUrl,
-      }));
+      setFormData(prev => ({ ...prev, profilePicture: uploadedImageUrl }));
     }
   }, [uploadedImageUrl]);
 
   const handleChange = (e) => {
-    dispatch(clearError());
     const { name, value } = e.target;
-    
-    // Check if the field belongs to the address subdocument
     if (["street", "city", "state", "country", "pincode"].includes(name)) {
-        setFormData((prev) => ({
-            ...prev,
-            address: {
-                ...prev.address,
-                [name]: value,
-            },
-        }));
+      setFormData(prev => ({
+        ...prev,
+        address: { ...prev.address, [name]: value },
+      }));
     } else {
-        setFormData({
-            ...formData,
-            [name]: value,
-        });
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
-
-  const handleSelectChange = (name, value) => {
-    dispatch(clearError());
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-  
-  const handleAddressChange = (name, value) => {
-    dispatch(clearError());
-    setFormData((prev) => ({
-        ...prev,
-        address: {
-            ...prev.address,
-            [name]: value,
-        },
-    }));
-  };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setLocalSuccess(null);
-    dispatch(clearError());
 
-    // Final check for the form validity
-    if (!isFormValid(formData)) {
-        alert("Please fill out all required fields marked with *, including uploading a profile picture.");
-        setIsSubmitting(false);
-        return;
-    }
-
-    let result;
-    if (isCompleteMode) {
-      result = await dispatch(completeProfile(formData));
-    } else if (isEditMode) {
-      result = await dispatch(updateProfile({ id: user._id, formData }));
-    }
+    const result = user.accountStatus === 'incomplete_profile'
+      ? await dispatch(completeProfile(formData))
+      : await dispatch(updateProfile({ id: user._id, formData }));
 
     if (result.meta.requestStatus === "fulfilled") {
-      setLocalSuccess(isCompleteMode ? "profileCompleted" : "profileUpdated");
+      setIsEditMode(false);
     }
-    
     setIsSubmitting(false);
   };
-  
+
   const handleRequestVerification = async () => {
     setIsSubmitting(true);
-    setLocalSuccess(null);
-    dispatch(clearError());
-    const result = await dispatch(requestVerification());
-    if (result.meta.requestStatus === "fulfilled") {
-        setLocalSuccess("verificationRequested");
-    }
+    await dispatch(requestVerification());
     setIsSubmitting(false);
   };
 
-  // ----------------------- Render Logic -----------------------
+  const handlePasswordResetRequest = async () => {
+    setPasswordResetLoading(true);
+    const result = await dispatch(requestPasswordReset());
+    setPasswordResetLoading(false);
+    
+    if (result.meta.requestStatus === "fulfilled") {
+      setPasswordResetSuccess(true);
+    }
+  };
+
+  const closePasswordDialog = () => {
+    setShowPasswordDialog(false);
+    setPasswordResetSuccess(false);
+  };
+
   if (!user && authLoading) {
-      return <div className="p-8 text-center text-gray-500">Loading Profile...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
   }
 
   if (!user) {
-      return <div className="p-8 text-center text-red-500">User profile data not found. Please log in again.</div>;
+    return <div className="p-8 text-center text-red-500">Please log in to view your profile.</div>;
   }
 
   const { accountStatus } = user;
+  const isIncomplete = accountStatus === 'incomplete_profile';
+  const isPending = accountStatus === 'pending_verification';
+  const isVerified = accountStatus === 'verified';
 
-  // Dynamic Content
-  const pageTitle = isCompleteMode 
-    ? "Complete Your Profile"
-    : "Edit Profile";
+  const StatusBanner = () => {
+    if (isVerified) {
+      return (
+        <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg flex items-center gap-3">
+          <CheckCircle className="text-green-600" size={24} />
+          <div>
+            <p className="font-semibold text-green-900">Profile Verified</p>
+            <p className="text-sm text-green-700">You have full access to all alumni features</p>
+          </div>
+        </div>
+      );
+    }
+    
+    if (isPending) {
+      return (
+        <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg flex items-center gap-3">
+          <Clock className="text-yellow-600" size={24} />
+          <div>
+            <p className="font-semibold text-yellow-900">Verification Pending</p>
+            <p className="text-sm text-yellow-700">Your profile is under review by administrators</p>
+          </div>
+        </div>
+      );
+    }
 
-  const submitButtonText = isCompleteMode
-    ? "Complete Profile"
-    : "Save Changes";
+    if (isIncomplete) {
+      return (
+        <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg flex items-center gap-3">
+          <AlertCircle className="text-blue-600" size={24} />
+          <div>
+            <p className="font-semibold text-blue-900">Complete Your Profile</p>
+            <p className="text-sm text-blue-700">Fill in all required fields to request verification</p>
+          </div>
+        </div>
+      );
+    }
+  };
 
-  const isPendingVerification = accountStatus === 'pending_verification';
-
+  const DisplayField = ({ label, value, icon: Icon }) => (
+    <div className="space-y-1">
+      <Label className="text-sm text-gray-600 flex items-center gap-2">
+        {Icon && <Icon size={16} className="text-gray-400" />}
+        {label}
+      </Label>
+      <p className="text-base text-gray-900 font-medium">
+        {value || <span className="text-gray-400">Not provided</span>}
+      </p>
+    </div>
+  );
 
   return (
-    <div className="bg-white p-6 md:p-10 rounded-lg shadow-xl max-w-4xl mx-auto">
-      <h2 className={`text-3xl font-bold mb-6 text-center ${isCompleteMode ? 'text-blue-600' : 'text-gray-800'}`}>
-        {pageTitle}
-      </h2>
-      <p className={`text-sm text-center mb-6 ${isCompleteMode ? 'text-gray-600' : 'text-gray-500'}`}>
-        {isCompleteMode
-          ? "Fill out the required details to request verification and join the alumni network."
-          : `Account Status: ${accountStatus.toUpperCase().replace('_', ' ')}`}
-      </p>
+    <div className="max-w-6xl mx-auto p-6">
+      {/* Password Reset Confirmation Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {passwordResetSuccess ? "Email Sent!" : "Change Password"}
+            </DialogTitle>
+            <DialogDescription>
+              {passwordResetSuccess ? (
+                <div className="space-y-3 py-4">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle size={20} />
+                    <span className="font-medium">Password reset link sent successfully!</span>
+                  </div>
+                  <p className="text-gray-600">
+                    We've sent a secure password reset link to <strong>{user.email}</strong>
+                  </p>
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                    <p className="text-sm text-blue-800">
+                      The link will expire in 1 hour. Please check your email and click the link to reset your password.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 py-2">
+                  <p>We will send a secure password reset link to your email address:</p>
+                  <div className="bg-gray-50 p-3 rounded border">
+                    <p className="font-medium text-gray-800">{user.email}</p>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Click the link in the email to securely reset your password.
+                  </p>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            {passwordResetSuccess ? (
+              <Button onClick={closePasswordDialog} className="w-full">
+                Got it
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPasswordDialog(false)}
+                  disabled={passwordResetLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handlePasswordResetRequest}
+                  disabled={passwordResetLoading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {passwordResetLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {(error || localSuccess) && (
-        <div className={`p-3 rounded-md mb-5 text-sm ${
-            error ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-        }`}>
-          {error 
-            ? error.message || "An unknown error occurred."
-            : localSuccess === "profileCompleted" 
-            ? "Profile completed successfully! Submit your verification request."
-            : localSuccess === "profileUpdated" 
-            ? "Profile updated successfully!"
-            : localSuccess === "verificationRequested" 
-            ? "Verification request sent! Please wait for admin approval."
-            : ""
-          }
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
+            <p className="text-gray-600 mt-1">
+              {user.firstName} {user.lastName} • {user.batch} • {user.department}
+            </p>
+          </div>
+          <Badge className={
+            isVerified ? "bg-green-100 text-green-800" :
+            isPending ? "bg-yellow-100 text-yellow-800" :
+            "bg-gray-100 text-gray-800"
+          }>
+            {accountStatus.replace('_', ' ').toUpperCase()}
+          </Badge>
+        </div>
+        <StatusBanner />
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
+          <p className="text-sm text-red-800">{error.message}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          {/* Profile Picture Column - Span 1/3 */}
-          <div className="md:col-span-1 flex flex-col items-center">
-            <ProfilePictureUpload
-              imageFile={imageFile}
-              setImageFile={setImageFile}
-              imageLoadingState={imageLoadingState}
-              uploadedImageUrl={uploadedImageUrl}
-              setUploadedImageUrl={setUploadedImageUrl}
-              setImageLoadingState={setImageLoadingState}
-              isEditMode={imageLoadingState || isPendingVerification} // Disable editing while uploading or pending verification
-              defaultImageUrl={user?.profilePicture}
-            />
-            {/* Display PFP status for user context */}
-            <p className="text-xs text-gray-500 mt-2">
-                *Required. Click or drag to upload/change.
-            </p>
-            {isPendingVerification && (
-                <div className="mt-4 p-2 text-center text-xs bg-yellow-100 text-yellow-800 rounded-md">
-                    Profile is locked for editing while verification is pending.
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Profile Picture */}
+          <div className="lg:col-span-1">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center">
+                  <ProfilePictureUpload
+                    imageFile={imageFile}
+                    setImageFile={setImageFile}
+                    imageLoadingState={imageLoadingState}
+                    uploadedImageUrl={uploadedImageUrl}
+                    setUploadedImageUrl={setUploadedImageUrl}
+                    setImageLoadingState={setImageLoadingState}
+                    isEditMode={!isEditMode || isPending}
+                    defaultImageUrl={user.profilePicture}
+                  />
+                  
+                  {isEditMode && !isPending && (
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Click to upload/change profile picture
+                    </p>
+                  )}
+
+                  <div className="w-full mt-6 pt-6 border-t space-y-3">
+                    <div>
+                      <Label className="text-xs text-gray-500">Email</Label>
+                      <p className="text-sm font-medium">{user.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Enrollment</Label>
+                      <p className="text-sm font-medium">{user.enrollmentNumber}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">Year of Passing</Label>
+                      <p className="text-sm font-medium">{user.yearOfPassing}</p>
+                    </div>
+                  </div>
+
+                  {/* Change Password Button */}
+                  <div className="w-full mt-6 pt-6 border-t">
+                    <Button
+                      type="button"
+                      onClick={() => setShowPasswordDialog(true)}
+                      className="w-full bg-gray-700 hover:bg-gray-800"
+                    >
+                      <KeyRound size={16} className="mr-2" />
+                      Change Password
+                    </Button>
+                  </div>
                 </div>
-            )}
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Form Fields Column - Span 2/3 */}
-          <div className="md:col-span-2 space-y-4">
-            
-            {/* 1. Personal Info */}
-            <div className="grid grid-cols-2 gap-4 border-b pb-4">
-                <h3 className="col-span-2 text-lg font-bold text-gray-700">Personal & Contact Info</h3>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Date of Birth
-                    </label>
-                    <input
+          {/* Right Column - Profile Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Personal Information */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">Personal Information</h2>
+                  {!isIncomplete && !isPending && !isEditMode && (
+                    <Button
+                      type="button"
+                      onClick={() => setIsEditMode(true)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Edit size={16} className="mr-2" />
+                      Edit Profile
+                    </Button>
+                  )}
+                </div>
+
+                {isEditMode ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Phone *</Label>
+                      <Input
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        placeholder="Enter phone number"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Gender</Label>
+                      <Select value={formData.gender} onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                          <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Date of Birth</Label>
+                      <Input
                         type="date"
                         name="dateOfBirth"
                         value={formData.dateOfBirth}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Gender
-                    </label>
-                    <Select
-                        value={formData.gender}
-                        onValueChange={(value) => handleSelectChange("gender", value)}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select Gender" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Male">Male</SelectItem>
-                            <SelectItem value="Female">Female</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                            <SelectItem value="Prefer not to say">Prefer not to say</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Phone Number * (Mongoose field: `phone`)
-                    </label>
-                    <input
-                        type="tel"
-                        name="phone" // Mongoose field name
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                        placeholder="Enter phone number"
-                        required
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Bio (Max 500 chars)
-                    </label>
-                    <textarea
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Bio</Label>
+                      <textarea
                         name="bio"
                         value={formData.bio}
                         onChange={handleChange}
-                        maxLength="500"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500 resize-none"
-                        placeholder="A brief summary about yourself..."
+                        className="w-full px-3 py-2 border rounded-md"
                         rows="3"
-                    />
-                </div>
-            </div>
+                        maxLength="500"
+                        placeholder="Tell us about yourself..."
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-6">
+                    <DisplayField label="Phone" value={user.phone} />
+                    <DisplayField label="Gender" value={user.gender} />
+                    <DisplayField label="Date of Birth" value={user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : null} />
+                    <div className="col-span-2">
+                      <DisplayField label="Bio" value={user.bio} />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* 2. Professional Info */}
-            <div className="grid grid-cols-2 gap-4 border-b pb-4">
-                <h3 className="col-span-2 text-lg font-bold text-gray-700">Professional Details</h3>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Current Designation *
-                    </label>
-                    <input
-                        type="text"
+            {/* Professional Information */}
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Professional Details</h2>
+
+                {isEditMode ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Current Designation *</Label>
+                      <Input
                         name="currentDesignation"
                         value={formData.currentDesignation}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                         placeholder="e.g., Software Engineer"
                         required
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Current Company *
-                    </label>
-                    <input
-                        type="text"
+                      />
+                    </div>
+                    <div>
+                      <Label>Current Company *</Label>
+                      <Input
                         name="currentCompany"
                         value={formData.currentCompany}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                        placeholder="e.g., Google, Tesla"
+                        placeholder="e.g., Google"
                         required
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Industry *
-                    </label>
-                    <input
-                        type="text"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>Industry *</Label>
+                      <Input
                         name="industry"
                         value={formData.industry}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                        placeholder="e.g., Information Technology, Finance"
+                        placeholder="e.g., Information Technology"
                         required
-                    />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        LinkedIn Profile URL
-                    </label>
-                    <input
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Label>LinkedIn Profile</Label>
+                      <Input
                         type="url"
                         name="linkedInProfile"
                         value={formData.linkedInProfile}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
                         placeholder="https://linkedin.com/in/yourname"
-                    />
-                </div>
-            </div>
-            
-            {/* 3. Address Info */}
-            <div className="grid grid-cols-2 gap-4 border-b pb-4">
-                <h3 className="col-span-2 text-lg font-bold text-gray-700">Address (Embedded)</h3>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Country *
-                    </label>
-                    <input
-                        type="text"
-                        name="country"
-                        value={formData.address.country}
-                        onChange={handleChange} // Uses generic handleChange, which is updated to handle address
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                        placeholder="e.g., India"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        State/Region *
-                    </label>
-                    <input
-                        type="text"
-                        name="state"
-                        value={formData.address.state}
-                        onChange={handleChange} // Uses generic handleChange, which is updated to handle address
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                        placeholder="e.g., Maharashtra"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        City
-                    </label>
-                    <input
-                        type="text"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-6">
+                    <DisplayField label="Designation" value={user.currentDesignation} />
+                    <DisplayField label="Company" value={user.currentCompany} />
+                    <DisplayField label="Industry" value={user.industry} />
+                    <div className="col-span-2">
+                      <DisplayField 
+                        label="LinkedIn" 
+                        value={user.linkedInProfile ? (
+                          <a href={user.linkedInProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                            View Profile
+                          </a>
+                        ) : null}
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Address Information */}
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Address</h2>
+
+                {isEditMode ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <Label>Street</Label>
+                      <Input
+                        name="street"
+                        value={formData.address.street}
+                        onChange={handleChange}
+                        placeholder="Street address"
+                      />
+                    </div>
+                    <div>
+                      <Label>City</Label>
+                      <Input
                         name="city"
                         value={formData.address.city}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                        placeholder="e.g., Mumbai"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                        Pincode
-                    </label>
-                    <input
-                        type="text"
+                        placeholder="City"
+                      />
+                    </div>
+                    <div>
+                      <Label>Pincode</Label>
+                      <Input
                         name="pincode"
                         value={formData.address.pincode}
                         onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md outline-none transition-colors focus:border-blue-500"
-                        placeholder="e.g., 400001"
-                    />
-                </div>
-            </div>
+                        placeholder="Pincode"
+                      />
+                    </div>
+                    <div>
+                      <Label>State/Region *</Label>
+                      <Input
+                        name="state"
+                        value={formData.address.state}
+                        onChange={handleChange}
+                        placeholder="State"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label>Country *</Label>
+                      <Input
+                        name="country"
+                        value={formData.address.country}
+                        onChange={handleChange}
+                        placeholder="Country"
+                        required
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="col-span-2">
+                      <DisplayField label="Street" value={user.address?.street} />
+                    </div>
+                    <DisplayField label="City" value={user.address?.city} />
+                    <DisplayField label="Pincode" value={user.address?.pincode} />
+                    <DisplayField label="State" value={user.address?.state} />
+                    <DisplayField label="Country" value={user.address?.country} />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* 4. Action Button */}
-            <button
-              type="submit"
-              className={`w-full py-3 text-base font-semibold border-0 rounded-md transition-colors flex items-center justify-center ${
-                isSubmitting || imageLoadingState || isPendingVerification
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : isCompleteMode 
-                  ? "bg-blue-600 text-white hover:bg-blue-700" 
-                  : "bg-green-600 text-white hover:bg-green-700"
-              }`}
-              disabled={isSubmitting || imageLoadingState || isPendingVerification}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isCompleteMode ? "Completing..." : "Saving..."}
-                </>
-              ) : (
-                submitButtonText
-              )}
-            </button>
+            {/* Action Buttons */}
+            {isEditMode && !isPending && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex gap-3">
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting || imageLoadingState}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          {isIncomplete ? "Saving..." : "Updating..."}
+                        </>
+                      ) : (
+                        <>
+                          <Save size={16} className="mr-2" />
+                          {isIncomplete ? "Save Profile" : "Update Profile"}
+                        </>
+                      )}
+                    </Button>
+                    {!isIncomplete && (
+                      <Button
+                        type="button"
+                        onClick={() => setIsEditMode(false)}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800"
+                      >
+                        <X size={16} className="mr-2" />
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Verification Request */}
+            {!isPending && !isVerified && !isEditMode && (
+              <Card>
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <p className="text-gray-700 mb-4">Ready to get verified?</p>
+                    <Button
+                      onClick={handleRequestVerification}
+                      disabled={isSubmitting}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Requesting...
+                        </>
+                      ) : (
+                        "Request Verification"
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </form>
-
-      {/* --- Verification Request Section --- */}
-      {isEditMode && accountStatus === 'incomplete_profile' && !isPendingVerification && (
-          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-              <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-md mb-4 max-w-md mx-auto">
-                  <p className="text-sm font-medium text-yellow-800">
-                      **Profile Data Ready:** Submit your profile now to officially request **verification** from the admin.
-                  </p>
-              </div>
-              <button
-                  onClick={handleRequestVerification}
-                  className={`py-2.5 px-6 text-base font-semibold border-0 rounded-md transition-colors flex items-center justify-center mx-auto ${
-                      isSubmitting
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-indigo-600 text-white hover:bg-indigo-700"
-                  }`}
-                  disabled={isSubmitting}
-              >
-                  {isSubmitting ? (
-                      <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending Request...
-                      </>
-                  ) : (
-                      <>
-                          <ArrowUpCircle className="mr-2 h-5 w-5" />
-                          Request Verification
-                      </>
-                  )}
-              </button>
-          </div>
-      )}
-      
-      {/* Display Verification Status */}
-      {(accountStatus === 'pending_verification' || localSuccess === "verificationRequested") && (
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            <div className="p-4 bg-blue-50 border-l-4 border-blue-500 rounded-md max-w-sm mx-auto">
-                <p className="text-sm font-medium text-blue-800">
-                    Verification request submitted successfully. Your profile is now locked. You will be notified when it's reviewed.
-                </p>
-            </div>
-        </div>
-      )}
-
-      {accountStatus === 'verified' && (
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-md max-w-sm mx-auto">
-                <p className="text-lg font-bold text-green-800">
-                    ✅ Profile Verified!
-                </p>
-                <p className="text-sm text-green-700 mt-1">
-                    You now have full access to the alumni network features.
-                </p>
-            </div>
-        </div>
-      )}
     </div>
   );
 }
