@@ -1,27 +1,19 @@
 // controllers/user/user-controller.js
 const User = require("../../models/User");
-const Donation = require("../../models/Donation"); // ADD THIS
-const DonationCampaign = require("../../models/DonationCampaign"); // ADD THIS
+const Event = require("../../models/Event");
+const EventRegistration = require("../../models/EventRegistration");
+const Donation = require("../../models/Donation");
+const DonationCampaign = require("../../models/DonationCampaign");
 
 // Get my dashboard data
 const getMyDashboard = async (req, res) => {
   try {
     const { id } = req.user;
 
+    // DON'T use .lean() here - we need virtuals
     const user = await User.findById(id)
       .select("-password")
-      .populate("currentMembership.membershipId", "name tier features")
-      .populate({
-        path: "eventRegistrations",
-        populate: {
-          path: "eventId",
-          select: "title date location status"
-        }
-      })
-      .populate({
-        path: "donations",
-        select: "amount donationDate status donationCampaignId"
-      });
+      .populate("currentMembership.membershipId", "name tier features");
 
     if (!user) {
       return res.status(404).json({
@@ -30,27 +22,82 @@ const getMyDashboard = async (req, res) => {
       });
     }
 
-    // Get upcoming events user is registered for
-    const Event = require("../../models/Event");
-    const upcomingEvents = await Event.find({
-      _id: { $in: user.eventRegistrations },
-      Date: { $gte: new Date() },
-      status: "published"
-    })
-      .select("title date location eventType")
-      .sort({ date: 1 })
-      .limit(5);
+    // Convert to object to get virtuals
+    const userObj = user.toObject();
 
+    // Get all event registrations for this user
+    const eventRegistrations = await EventRegistration.find({
+      alumniId: id,
+      status: { $ne: "cancelled" }
+    })
+      .populate('eventId', 'title startDateTime endDateTime venue isOnline eventType coverImage status')
+      .lean();
+
+    // Get upcoming events (future events user is registered for)
+    const now = new Date();
+    const upcomingEvents = eventRegistrations
+      .filter(reg => {
+        const event = reg.eventId;
+        return event && 
+               event.status === 'published' && 
+               new Date(event.startDateTime) > now;
+      })
+      .sort((a, b) => new Date(a.eventId.startDateTime) - new Date(b.eventId.startDateTime))
+      .slice(0, 5)
+      .map(reg => ({
+        ...reg.eventId,
+        registrationId: reg._id,
+        registrationNumber: reg.registrationNumber,
+        registrationDate: reg.registrationDate,
+        attended: reg.attended
+      }));
+
+    // Get attended events count (events where attendance was marked)
+    const attendedEventsCount = await EventRegistration.countDocuments({
+      alumniId: id,
+      attended: true,
+      status: { $ne: "cancelled" }
+    });
+
+    // Get total registered events count
+    const totalRegisteredEvents = await EventRegistration.countDocuments({
+      alumniId: id,
+      status: { $ne: "cancelled" }
+    });
 
     // Get recent donations
-    const recentDonations = user.donations.slice(-3).reverse();
+    const recentDonations = await Donation.find({ alumniId: id })
+      .populate('donationCampaignId', 'title description')
+      .sort({ donationDate: -1 })
+      .limit(3)
+      .lean();
 
-    // Calculate stats
+    // Calculate total donations
+    const totalDonations = await Donation.aggregate([
+      {
+        $match: { 
+          alumniId: user._id,
+          paymentStatus: 'completed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    // Calculate stats using virtuals from the user document
     const stats = {
-      totalEventsAttended: user.eventRegistrations.length,
-      totalDonations: user.donations.reduce((sum, d) => sum + (d.amount || 0), 0),
+      totalEventsRegistered: totalRegisteredEvents,
+      totalEventsAttended: attendedEventsCount,
+      attendanceRate: totalRegisteredEvents > 0 
+        ? `${Math.round((attendedEventsCount / totalRegisteredEvents) * 100)}%`
+        : '0%',
+      totalDonations: totalDonations.length > 0 ? totalDonations[0].total : 0,
       membershipStatus: user.hasActiveMembership ? "active" : "inactive",
-      accountCompleteness: calculateProfileCompleteness(user),
+      accountCompleteness: calculateProfileCompleteness(userObj),
       upcomingEventsCount: upcomingEvents.length,
     };
 
@@ -58,24 +105,25 @@ const getMyDashboard = async (req, res) => {
       success: true,
       data: {
         profile: {
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          profilePicture: user.profilePicture,
-          alumniId: user.alumniId,
-          batch: user.batch,
-          department: user.department,
-          degree: user.degree,
-          currentCompany: user.currentCompany,
-          currentDesignation: user.currentDesignation,
-          accountStatus: user.accountStatus,
-          isVerified: user.isVerified,
-          isProfileComplete: user.isProfileComplete,
+          firstName: userObj.firstName,
+          lastName: userObj.lastName,
+          email: userObj.email,
+          profilePicture: userObj.profilePicture,
+          alumniId: userObj.alumniId,
+          batch: userObj.batch,
+          department: userObj.department,
+          degree: userObj.degree,
+          currentCompany: userObj.currentCompany,
+          currentDesignation: userObj.currentDesignation,
+          accountStatus: userObj.accountStatus,
+          isVerified: userObj.isVerified, // Virtual
+          isProfileComplete: userObj.isProfileComplete, // Virtual
+          fullName: userObj.fullName, // Virtual
         },
         stats,
         upcomingEvents,
         recentDonations,
-        membership: user.currentMembership,
+        membership: userObj.currentMembership,
       },
     });
   } catch (e) {
@@ -115,26 +163,72 @@ function calculateProfileCompleteness(user) {
 const getMyEvents = async (req, res) => {
   try {
     const { id } = req.user;
+    const { 
+      page = 1, 
+      limit = 10, 
+      status, 
+      upcoming, 
+      attended 
+    } = req.query;
 
-    const user = await User.findById(id).populate({
-      path: "eventRegistrations",
-      populate: {
-        path: "eventId",
-        select: "title description date location eventType status banner"
-      }
-    });
+    // Build filter
+    const filter = { 
+      alumniId: id,
+      status: { $ne: "cancelled" }
+    };
 
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found!",
-      });
+    // Get registrations with populated event data
+    const registrations = await EventRegistration.find(filter)
+      .populate({
+        path: 'eventId',
+        select: 'title description startDateTime endDateTime venue isOnline eventType status coverImage'
+      })
+      .sort({ registrationDate: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .lean();
+
+    const totalRegistrations = await EventRegistration.countDocuments(filter);
+
+    // Filter based on query params
+    let filteredRegistrations = registrations.filter(reg => reg.eventId !== null);
+
+    if (upcoming === 'true') {
+      const now = new Date();
+      filteredRegistrations = filteredRegistrations.filter(reg => 
+        new Date(reg.eventId.startDateTime) > now
+      );
     }
+
+    if (attended !== undefined) {
+      filteredRegistrations = filteredRegistrations.filter(reg => 
+        reg.attended === (attended === 'true')
+      );
+    }
+
+    // Format response
+    const formattedEvents = filteredRegistrations.map(reg => ({
+      registrationId: reg._id,
+      registrationNumber: reg.registrationNumber,
+      registrationDate: reg.registrationDate,
+      status: reg.status,
+      attended: reg.attended,
+      attendanceMarkedAt: reg.attendanceMarkedAt,
+      amount: reg.amount,
+      paymentStatus: reg.paymentStatus,
+      event: reg.eventId
+    }));
 
     res.status(200).json({
       success: true,
-      data: user.eventRegistrations,
-      count: user.eventRegistrations.length,
+      data: formattedEvents,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalRegistrations / limit),
+        totalRegistrations,
+        hasNextPage: page < Math.ceil(totalRegistrations / limit),
+        hasPrevPage: page > 1,
+      },
     });
   } catch (e) {
     console.error("Error in getMyEvents:", e);
@@ -149,27 +243,45 @@ const getMyEvents = async (req, res) => {
 const getMyDonations = async (req, res) => {
   try {
     const { id } = req.user;
+    const { page = 1, limit = 10 } = req.query;
 
-    const user = await User.findById(id).populate({
-      path: "donations",
-      populate: {
-        path: "donationCampaignId",
-        select: "title description"
+    const donations = await Donation.find({ alumniId: id })
+      .populate('donationCampaignId', 'title description goalAmount')
+      .sort({ donationDate: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .lean();
+
+    const totalDonations = await Donation.countDocuments({ alumniId: id });
+
+    // Calculate total amount - convert id string to ObjectId
+    const mongoose = require('mongoose');
+    const totalAmount = await Donation.aggregate([
+      {
+        $match: { 
+          alumniId: new mongoose.Types.ObjectId(id),
+          paymentStatus: 'completed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: '$amount' }
+        }
       }
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found!",
-      });
-    }
+    ]);
 
     res.status(200).json({
       success: true,
-      data: user.donations,
-      total: user.donations.reduce((sum, d) => sum + (d.amount || 0), 0),
-      count: user.donations.length,
+      data: donations,
+      totalAmount: totalAmount.length > 0 ? totalAmount[0].total : 0,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalDonations / limit),
+        totalDonations,
+        hasNextPage: page < Math.ceil(totalDonations / limit),
+        hasPrevPage: page > 1,
+      },
     });
   } catch (e) {
     console.error("Error in getMyDonations:", e);
@@ -185,6 +297,7 @@ const getMyMembership = async (req, res) => {
   try {
     const { id } = req.user;
 
+    // Don't use .lean() to access virtuals
     const user = await User.findById(id)
       .select("currentMembership membershipHistory")
       .populate("currentMembership.membershipId", "name tier features price description")
@@ -203,12 +316,15 @@ const getMyMembership = async (req, res) => {
       });
     }
 
+    // Access virtual through document
+    const hasActiveMembership = user.hasActiveMembership;
+
     res.status(200).json({
       success: true,
       data: {
         current: user.currentMembership,
         history: user.membershipHistory,
-        hasActiveMembership: user.hasActiveMembership,
+        hasActiveMembership,
       },
     });
   } catch (e) {
@@ -220,7 +336,7 @@ const getMyMembership = async (req, res) => {
   }
 };
 
-// Search user directory (public for verified user)
+// Search user directory (public for verified users)
 const searchUserDirectory = async (req, res) => {
   try {
     const {
@@ -233,7 +349,7 @@ const searchUserDirectory = async (req, res) => {
       currentCompany,
     } = req.query;
 
-    // Only verified user can be searched
+    // Only verified users can be searched
     const filter = { accountStatus: "verified", isActive: true };
 
     if (search) {
@@ -249,37 +365,38 @@ const searchUserDirectory = async (req, res) => {
     if (yearOfPassing) filter.yearOfPassing = parseInt(yearOfPassing);
     if (currentCompany) filter.currentCompany = { $regex: currentCompany, $options: "i" };
 
-    const user = await User.find(filter)
+    const users = await User.find(filter)
       .select("firstName lastName profilePicture alumniId batch department degree yearOfPassing currentCompany currentDesignation industry linkedInProfile privacySettings")
       .sort({ lastName: 1 })
       .limit(limit * 1)
-      .skip((page - 1) * limit);
+      .skip((page - 1) * limit)
+      .lean();
 
     // Filter based on privacy settings
-    const filteredUser = user.map(alum => {
-      const alumObj = alum.toObject();
+    const filteredUsers = users.map(user => {
+      const userObj = { ...user };
       
-      if (!alumObj.privacySettings?.showEmail) delete alumObj.email;
-      if (!alumObj.privacySettings?.showPhone) delete alumObj.phone;
-      if (!alumObj.privacySettings?.showCompany) {
-        delete alumObj.currentCompany;
-        delete alumObj.currentDesignation;
+      if (!userObj.privacySettings?.showEmail) delete userObj.email;
+      if (!userObj.privacySettings?.showPhone) delete userObj.phone;
+      if (!userObj.privacySettings?.showCompany) {
+        delete userObj.currentCompany;
+        delete userObj.currentDesignation;
       }
-      delete alumObj.privacySettings;
+      delete userObj.privacySettings;
       
-      return alumObj;
+      return userObj;
     });
 
-    const totalUser = await User.countDocuments(filter);
+    const totalUsers = await User.countDocuments(filter);
 
     res.status(200).json({
       success: true,
-      data: filteredUser,
+      data: filteredUsers,
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(totalUser / limit),
-        totalUser,
-        hasNextPage: page < Math.ceil(totalUser / limit),
+        totalPages: Math.ceil(totalUsers / limit),
+        totalUsers,
+        hasNextPage: page < Math.ceil(totalUsers / limit),
         hasPrevPage: page > 1,
       },
     });
@@ -301,9 +418,11 @@ const getUserProfileById = async (req, res) => {
       _id: id,
       accountStatus: "verified",
       isActive: true,
-    }).select(
-      "firstName lastName profilePicture alumniId batch department degree yearOfPassing currentCompany currentDesignation industry linkedInProfile bio email phone privacySettings"
-    );
+    })
+      .select(
+        "firstName lastName profilePicture alumniId batch department degree yearOfPassing currentCompany currentDesignation industry linkedInProfile bio email phone privacySettings"
+      )
+      .lean();
 
     if (!user) {
       return res.status(404).json({
@@ -312,20 +431,20 @@ const getUserProfileById = async (req, res) => {
       });
     }
 
-    const alumObj = user.toObject();
+    const userObj = { ...user };
 
     // Apply privacy filters
-    if (!alumObj.privacySettings?.showEmail) delete alumObj.email;
-    if (!alumObj.privacySettings?.showPhone) delete alumObj.phone;
-    if (!alumObj.privacySettings?.showCompany) {
-      delete alumObj.currentCompany;
-      delete alumObj.currentDesignation;
+    if (!userObj.privacySettings?.showEmail) delete userObj.email;
+    if (!userObj.privacySettings?.showPhone) delete userObj.phone;
+    if (!userObj.privacySettings?.showCompany) {
+      delete userObj.currentCompany;
+      delete userObj.currentDesignation;
     }
-    delete alumObj.privacySettings;
+    delete userObj.privacySettings;
 
     res.status(200).json({
       success: true,
-      data: alumObj,
+      data: userObj,
     });
   } catch (e) {
     console.error("Error in getUserProfileById:", e);

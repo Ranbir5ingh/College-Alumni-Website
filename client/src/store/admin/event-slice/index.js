@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import ExcelJS from "exceljs";
 
 const initialState = {
   isLoading: false,
@@ -230,7 +231,7 @@ export const deactivateAttendanceQR = createAsyncThunk(
   }
 );
 
-// Export event registrations
+// Export event registrations with Excel download (using ExcelJS - more secure)
 export const exportEventRegistrations = createAsyncThunk(
   "adminEvent/exportEventRegistrations",
   async (id, { rejectWithValue }) => {
@@ -239,7 +240,101 @@ export const exportEventRegistrations = createAsyncThunk(
         `http://localhost:5000/api/admin/events/${id}/registrations/export`,
         { withCredentials: true }
       );
-      return response.data;
+
+      if (response.data?.success) {
+        const { eventTitle, registrations, count } = response.data.data;
+
+        if (!registrations || registrations.length === 0) {
+          throw new Error("No registrations to export");
+        }
+
+        // Create a new workbook
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Alumni Portal';
+        workbook.created = new Date();
+
+        // Add Summary Sheet
+        const summarySheet = workbook.addWorksheet('Summary', {
+          properties: { tabColor: { argb: '4472C4' } }
+        });
+
+        summarySheet.columns = [
+          { header: 'Field', key: 'field', width: 25 },
+          { header: 'Value', key: 'value', width: 40 }
+        ];
+
+        summarySheet.addRows([
+          { field: 'Event Title', value: eventTitle },
+          { field: 'Total Registrations', value: count },
+          { field: 'Export Date', value: new Date().toLocaleString() }
+        ]);
+
+        // Style summary sheet header
+        summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+        summarySheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: '4472C4' }
+        };
+
+        // Add Registrations Sheet
+        const registrationsSheet = workbook.addWorksheet('Registrations');
+
+        // Get column headers from first registration object
+        const headers = Object.keys(registrations[0]);
+        registrationsSheet.columns = headers.map(header => ({
+          header: header,
+          key: header,
+          width: header.length > 20 ? 30 : header.length + 10
+        }));
+
+        // Add data rows
+        registrations.forEach(reg => {
+          registrationsSheet.addRow(reg);
+        });
+
+        // Style registrations header
+        registrationsSheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFF' } };
+        registrationsSheet.getRow(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: '70AD47' }
+        };
+
+        // Add borders to all cells
+        registrationsSheet.eachRow({ includeEmpty: false }, (row) => {
+          row.eachCell({ includeEmpty: false }, (cell) => {
+            cell.border = {
+              top: { style: 'thin' },
+              left: { style: 'thin' },
+              bottom: { style: 'thin' },
+              right: { style: 'thin' }
+            };
+          });
+        });
+
+        // Generate file name
+        const timestamp = new Date().toISOString().split('T')[0];
+        const sanitizedTitle = eventTitle
+          .replace(/[^a-z0-9]/gi, '_')
+          .toLowerCase()
+          .substring(0, 30);
+        const fileName = `${sanitizedTitle}_registrations_${timestamp}.xlsx`;
+
+        // Write to buffer and download
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        return response.data;
+      }
     } catch (error) {
       return rejectWithValue(
         error.response?.data || { message: "Failed to export registrations" }

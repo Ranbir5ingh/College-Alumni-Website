@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import EventActionMenu from "./EventActionMenu";
 
-function EventCard({ event, onViewDetails, onViewRegistrations, onGenerateQR, onExport, onSendReminders, onUpdateStatus, onDelete }) {
+function EventCard({ event, onViewRegistrations, onGenerateQR, onExport, onSendReminders, onUpdateStatus, onDelete }) {
   const getStatusBadge = (status) => {
     const statusConfig = {
       draft: { color: "bg-gray-100 text-gray-800", label: "Draft" },
@@ -84,7 +84,6 @@ function EventCard({ event, onViewDetails, onViewRegistrations, onGenerateQR, on
 
           <EventActionMenu
             event={event}
-            onViewDetails={onViewDetails}
             onViewRegistrations={onViewRegistrations}
             onGenerateQR={onGenerateQR}
             onExport={onExport}

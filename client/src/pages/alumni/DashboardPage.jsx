@@ -13,7 +13,8 @@ import {
   ArrowRight,
   Users,
   Briefcase,
-  Award
+  Award,
+  Target
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ function DashboardPage() {
   }
 
   const { profile, stats, upcomingEvents, recentDonations, membership } = dashboardData;
+  console.log(profile.isProfileComplete);
 
   // Show profile completion notification
   const showProfileNotification = profile.accountStatus === 'incomplete_profile' || !profile.isProfileComplete;
@@ -90,7 +92,7 @@ function DashboardPage() {
             <img
               src={profile.profilePicture}
               alt={profile.firstName}
-              className="w-20 h-20 rounded-full border-4 border-white shadow-lg"
+              className="w-20 h-20 rounded-full border-4 border-white shadow-lg object-cover"
             />
           )}
         </div>
@@ -102,8 +104,11 @@ function DashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Events Attended</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.totalEventsAttended}</p>
+                <p className="text-sm text-gray-600 mb-1">Events Registered</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.totalEventsRegistered || 0}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.totalEventsAttended || 0} attended
+                </p>
               </div>
               <div className="bg-blue-100 p-3 rounded-lg">
                 <Calendar className="text-blue-600" size={24} />
@@ -116,11 +121,14 @@ function DashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Upcoming Events</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.upcomingEventsCount}</p>
+                <p className="text-sm text-gray-600 mb-1">Attendance Rate</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.attendanceRate || '0%'}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.upcomingEventsCount || 0} upcoming
+                </p>
               </div>
               <div className="bg-green-100 p-3 rounded-lg">
-                <Clock className="text-green-600" size={24} />
+                <Target className="text-green-600" size={24} />
               </div>
             </div>
           </CardContent>
@@ -131,7 +139,7 @@ function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Donations</p>
-                <p className="text-3xl font-bold text-gray-900">₹{stats.totalDonations.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900">₹{(stats.totalDonations || 0).toLocaleString()}</p>
               </div>
               <div className="bg-purple-100 p-3 rounded-lg">
                 <Heart className="text-purple-600" size={24} />
@@ -192,20 +200,45 @@ function DashboardPage() {
                       className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                       onClick={() => navigate(`/alumni/events/${event._id}`)}
                     >
-                      <div className="bg-blue-100 p-2 rounded-lg flex-shrink-0">
-                        <Calendar className="text-blue-600" size={20} />
-                      </div>
+                      {event.coverImage ? (
+                        <img
+                          src={event.coverImage}
+                          alt={event.title}
+                          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="bg-blue-100 p-2 rounded-lg flex-shrink-0">
+                          <Calendar className="text-blue-600" size={20} />
+                        </div>
+                      )}
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900">{event.title}</h4>
                         <p className="text-sm text-gray-600">
-                          {new Date(event.date).toLocaleDateString('en-US', {
-                            weekday: 'long',
+                          {new Date(event.startDateTime).toLocaleDateString('en-US', {
+                            weekday: 'short',
                             year: 'numeric',
-                            month: 'long',
+                            month: 'short',
                             day: 'numeric'
                           })}
+                          {' • '}
+                          {new Date(event.startDateTime).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
                         </p>
-                        <p className="text-sm text-gray-500">{event.location}</p>
+                        <p className="text-sm text-gray-500">
+                          {event.isOnline ? '🌐 Online' : `📍 ${event.venue?.name || 'Venue TBA'}`}
+                        </p>
+                        {event.registrationNumber && (
+                          <p className="text-xs text-blue-600 mt-1">
+                            Reg: {event.registrationNumber}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                          {event.eventType}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -248,19 +281,30 @@ function DashboardPage() {
                       key={donation._id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
-                      <div>
-                        <p className="font-semibold text-gray-900">₹{donation.amount.toLocaleString()}</p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(donation.donationDate).toLocaleDateString()}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-900">₹{donation.amount.toLocaleString()}</p>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            donation.paymentStatus === 'completed' ? 'bg-green-100 text-green-800' :
+                            donation.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {donation.paymentStatus}
+                          </span>
+                        </div>
+                        {donation.donationCampaignId && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            {donation.donationCampaignId.title}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(donation.donationDate).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
                         </p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        donation.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        donation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {donation.status}
-                      </span>
                     </div>
                   ))}
                 </div>
@@ -371,7 +415,7 @@ function DashboardPage() {
                   <div>
                     <p className="text-sm text-gray-600">Plan</p>
                     <p className="text-xl font-bold text-gray-900">{membership.membershipId.name}</p>
-                    <span className="inline-block mt-1 px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">
+                    <span className="inline-block mt-1 px-3 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full uppercase">
                       {membership.membershipId.tier}
                     </span>
                   </div>

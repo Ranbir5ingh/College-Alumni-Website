@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { 
@@ -9,9 +9,9 @@ import {
   TrendingUp,
   AlertCircle,
   UserCheck,
-  Briefcase,
-  Heart,
-  DollarSign
+  GraduationCap,
+  Building2,
+  BarChart3
 } from "lucide-react";
 import { getAlumniStats } from "@/store/admin/alumni-slice";
 import { getEventStats } from "@/store/admin/event-slice";
@@ -28,7 +28,7 @@ function AdminDashboard() {
     dispatch(getEventStats());
   }, [dispatch]);
 
-  const StatCard = ({ title, value, icon: Icon, trend, color, link }) => (
+  const StatCard = ({ title, value, subtitle, icon: Icon, color, link }) => (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-gray-600">
@@ -38,11 +38,8 @@ function AdminDashboard() {
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold">{value}</div>
-        {trend && (
-          <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-            <TrendingUp size={12} />
-            {trend}
-          </p>
+        {subtitle && (
+          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
         )}
         {link && (
           <Link to={link} className="text-xs text-blue-600 hover:underline mt-2 inline-block">
@@ -61,13 +58,17 @@ function AdminDashboard() {
     );
   }
 
+  const verificationRate = alumniStats?.overview?.totalUser > 0
+    ? ((alumniStats.overview.verifiedUser / alumniStats.overview.totalUser) * 100).toFixed(1)
+    : 0;
+
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">Welcome to Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
         <p className="text-blue-100">
-          Manage your alumni network, events, and more from this central hub.
+          Overview of alumni network and engagement metrics
         </p>
       </div>
 
@@ -76,133 +77,79 @@ function AdminDashboard() {
         <Alert className="border-yellow-400 bg-yellow-50">
           <AlertCircle className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            You have <strong>{alumniStats.overview.pendingVerification}</strong> alumni pending verification.
+            <strong>{alumniStats.overview.pendingVerification}</strong> alumni applications awaiting verification.
             <Link to="/admin/alumni?status=pending_verification" className="ml-2 underline font-medium">
-              Review now
+              Review applications
             </Link>
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Alumni Statistics */}
+      {/* Key Metrics Overview */}
       <div>
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Users className="text-blue-600" />
-          Alumni Statistics
+          <BarChart3 className="text-blue-600" />
+          Key Metrics
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Alumni"
-            value={alumniStats?.overview?.totalAlumni || 0}
+            value={alumniStats?.overview?.totalUser || 0}
+            subtitle={`${verificationRate}% verified`}
             icon={Users}
             color="text-blue-600"
             link="/admin/alumni"
           />
           <StatCard
-            title="Verified Alumni"
-            value={alumniStats?.overview?.verifiedAlumni || 0}
-            icon={UserCheck}
-            color="text-green-600"
-            trend={`${((alumniStats?.overview?.verifiedAlumni / alumniStats?.overview?.totalAlumni) * 100).toFixed(1)}% of total`}
-          />
-          <StatCard
             title="Pending Verification"
             value={alumniStats?.overview?.pendingVerification || 0}
+            subtitle="Requires action"
             icon={Clock}
             color="text-yellow-600"
             link="/admin/alumni?status=pending_verification"
           />
           <StatCard
-            title="Active Members"
-            value={alumniStats?.overview?.alumniWithMembership || 0}
-            icon={DollarSign}
-            color="text-purple-600"
-          />
-        </div>
-      </div>
-
-      {/* Event Statistics */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <Calendar className="text-blue-600" />
-          Event Statistics
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Events"
-            value={eventStats?.overview?.totalEvents || 0}
+            title="Active Events"
+            value={eventStats?.overview?.upcomingEvents || 0}
+            subtitle={`${eventStats?.overview?.publishedEvents || 0} total published`}
             icon={Calendar}
-            color="text-blue-600"
+            color="text-green-600"
             link="/admin/events"
           />
           <StatCard
-            title="Upcoming Events"
-            value={eventStats?.overview?.upcomingEvents || 0}
-            icon={Clock}
-            color="text-green-600"
-            link="/admin/events?status=published"
-          />
-          <StatCard
-            title="Published Events"
-            value={eventStats?.overview?.publishedEvents || 0}
-            icon={CheckCircle}
-            color="text-teal-600"
-          />
-          <StatCard
-            title="Completed Events"
-            value={eventStats?.overview?.completedEvents || 0}
-            icon={CheckCircle}
-            color="text-gray-600"
-          />
-        </div>
-      </div>
-
-      {/* Registration & Attendance */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Event Engagement</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <StatCard
-            title="Total Registrations"
+            title="Event Registrations"
             value={eventStats?.registrations?.totalRegistrations || 0}
-            icon={Users}
-            color="text-blue-600"
-          />
-          <StatCard
-            title="Confirmed Registrations"
-            value={eventStats?.registrations?.confirmedRegistrations || 0}
-            icon={CheckCircle}
-            color="text-green-600"
-          />
-          <StatCard
-            title="Attendance Rate"
-            value={eventStats?.registrations?.attendanceRate || "0%"}
-            icon={TrendingUp}
+            subtitle={`${eventStats?.registrations?.attendanceRate || '0%'} attendance rate`}
+            icon={UserCheck}
             color="text-purple-600"
           />
         </div>
       </div>
 
-      {/* Department Breakdown */}
+      {/* Alumni Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Department Stats */}
+        {/* Department Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Alumni by Department</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="text-blue-600" size={20} />
+              Alumni by Department
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {alumniStats?.departmentStats?.length > 0 ? (
               <div className="space-y-3">
-                {alumniStats.departmentStats.slice(0, 5).map((dept) => (
+                {alumniStats.departmentStats.slice(0, 6).map((dept) => (
                   <div key={dept._id} className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">
                       {dept._id || "Not Specified"}
                     </span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 bg-gray-200 rounded-full h-2.5">
                         <div
-                          className="bg-blue-600 h-2 rounded-full"
+                          className="bg-blue-600 h-2.5 rounded-full"
                           style={{
-                            width: `${(dept.count / alumniStats.overview.totalAlumni) * 100}%`,
+                            width: `${(dept.count / alumniStats.overview.totalUser) * 100}%`,
                           }}
                         ></div>
                       </div>
@@ -214,121 +161,117 @@ function AdminDashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">No data available</p>
+              <p className="text-gray-500 text-sm text-center py-4">No department data available</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Event Type Stats */}
+        {/* Batch Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Events by Type</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {eventStats?.eventTypeStats?.length > 0 ? (
-              <div className="space-y-3">
-                {eventStats.eventTypeStats.map((type) => (
-                  <div key={type._id} className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700 capitalize">
-                      {type._id}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-600 h-2 rounded-full"
-                          style={{
-                            width: `${(type.count / eventStats.overview.totalEvents) * 100}%`,
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900 w-12 text-right">
-                        {type.count}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm">No data available</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-900">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link
-              to="/admin/events?action=create"
-              className="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow"
-            >
-              <span className="text-sm font-medium text-blue-900">Create New Event</span>
-            </Link>
-            <Link
-              to="/admin/alumni?status=pending_verification"
-              className="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow"
-            >
-              <span className="text-sm font-medium text-blue-900">Review Pending Alumni</span>
-            </Link>
-            <Link
-              to="/admin/news?action=create"
-              className="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow"
-            >
-              <span className="text-sm font-medium text-blue-900">Post News Update</span>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-green-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="text-green-900">Batch Distribution</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="text-green-600" size={20} />
+              Recent Batches
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {alumniStats?.batchStats?.length > 0 ? (
               <div className="space-y-2">
-                {alumniStats.batchStats.slice(0, 5).map((batch) => (
-                  <div key={batch._id} className="flex justify-between text-sm">
-                    <span className="font-medium text-green-900">{batch._id}</span>
-                    <span className="text-green-700">{batch.count} alumni</span>
+                {alumniStats.batchStats.slice(0, 6).map((batch) => (
+                  <div key={batch._id} className="flex justify-between items-center py-1.5">
+                    <span className="text-sm font-medium text-gray-700">Batch {batch._id}</span>
+                    <span className="text-sm font-semibold text-gray-900 bg-gray-100 px-3 py-1 rounded-full">
+                      {batch.count} alumni
+                    </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">No data available</p>
+              <p className="text-gray-500 text-sm text-center py-4">No batch data available</p>
             )}
           </CardContent>
         </Card>
-
-        <Card className="bg-purple-50 border-purple-200">
-          <CardHeader>
-            <CardTitle className="text-purple-900">System Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-purple-900">Active Alumni</span>
-              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                {alumniStats?.overview?.activeAlumni || 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-purple-900">Draft Events</span>
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
-                {eventStats?.overview?.draftEvents || 0}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-purple-900">Featured Events</span>
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                {eventStats?.overview?.featuredEvents || 0}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Account Status Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Account Status Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-700">
+                {alumniStats?.overview?.verifiedUser || 0}
+              </div>
+              <div className="text-xs text-green-600 mt-1">Verified</div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-2xl font-bold text-yellow-700">
+                {alumniStats?.overview?.pendingVerification || 0}
+              </div>
+              <div className="text-xs text-yellow-600 mt-1">Pending</div>
+            </div>
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <div className="text-2xl font-bold text-gray-700">
+                {alumniStats?.overview?.incompleteProfiles || 0}
+              </div>
+              <div className="text-xs text-gray-600 mt-1">Incomplete</div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-700">
+                {alumniStats?.overview?.alumniWithMembership || 0}
+              </div>
+              <div className="text-xs text-blue-600 mt-1">Members</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Link
+              to="/admin/alumni?status=pending_verification"
+              className="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors"
+            >
+              <Clock className="text-yellow-600" size={24} />
+              <div>
+                <div className="font-semibold text-gray-900">Review Applications</div>
+                <div className="text-xs text-gray-600">
+                  {alumniStats?.overview?.pendingVerification || 0} pending
+                </div>
+              </div>
+            </Link>
+            <Link
+              to="/admin/events?action=create"
+              className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <Calendar className="text-blue-600" size={24} />
+              <div>
+                <div className="font-semibold text-gray-900">Create Event</div>
+                <div className="text-xs text-gray-600">Schedule new event</div>
+              </div>
+            </Link>
+            <Link
+              to="/admin/alumni"
+              className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+            >
+              <Users className="text-green-600" size={24} />
+              <div>
+                <div className="font-semibold text-gray-900">Manage Alumni</div>
+                <div className="text-xs text-gray-600">
+                  {alumniStats?.overview?.totalUser || 0} total alumni
+                </div>
+              </div>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -23,6 +23,7 @@ import AlumniManagement from "./pages/admin/AlumniManagement";
 import EventDetailsPage from "./components/common/EventDetails";
 import ResetPasswordPage from "./pages/alumni/ResetPasswordPage";
 import AlumniEventsPage from "./pages/alumni/Events";
+import EventAttendance from "./pages/alumni/EventAttendance";
 
 
 
@@ -47,6 +48,7 @@ function App() {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Routes>
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+         <Route path="/events/:eventId/attendance/:token" element={<EventAttendance />} />
         {/* Public Routes - Uses PublicLayout */}
         <Route
           path="/"
