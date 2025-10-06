@@ -1,141 +1,265 @@
-import { Link } from "react-router-dom"
-import { Facebook, Twitter, Linkedin, Instagram, Mail, Phone, MapPin } from "lucide-react"
+import { Link } from "react-router-dom";
+import {
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
+  Mail,
+  Phone,
+  MapPin,
+  ArrowUpRight,
+} from "lucide-react";
+import logo from '../assets/Images/images.jpg';
 
 const Footer = () => {
   return (
-    <footer className="bg-secondary border-t border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* College Info */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-toboggan-bold text-lg">B</span>
+    <footer className="bg-background border-t border-border">
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+          {/* Brand Section - Takes more space */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                {/* <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20"> */}
+                  <img src={logo} alt="BBSBEC Alumni Logo" className="w-10 h-10 object-contain" />
+                {/* </div> */}
+                <div>
+                  <h3 className="font-bold text-xl text-foreground">
+                    BBSBEC Alumni
+                  </h3>
+                  <p className="text-xs text-foreground">
+                    Engineering Excellence
+                  </p>
+                </div>
               </div>
-              <div>
-                <span className="font-toboggan-bold text-lg text-foreground">BBSB Alumni</span>
-                <p className="text-xs text-muted-foreground">Engineering College</p>
-              </div>
+              <p className="text-base  leading-relaxed max-w-md">
+                Connecting alumni of Baba Banda Singh Bahadur Engineering
+                College, fostering lifelong relationships and driving
+                professional growth across generations.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Connecting alumni of Baba Banda Singh Bahadur Engineering College, fostering lifelong relationships and
-              professional growth.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Linkedin className="h-5 w-5" />
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                <Instagram className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="font-toboggan-medium text-foreground mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/alumni-directory"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Alumni Directory
-                </Link>
-              </li>
-              <li>
-                <Link to="/events" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Events
-                </Link>
-              </li>
-              <li>
-                <Link to="/news" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  News & Updates
-                </Link>
-              </li>
-              <li>
-                <Link to="/careers" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Career Opportunities
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h3 className="font-toboggan-medium text-foreground mb-4">Services</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/give-back" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Donations
-                </Link>
-              </li>
-              <li>
-                <Link to="/careers" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Mentorship
-                </Link>
-              </li>
-              <li>
-                <Link to="/gallery" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Gallery
-                </Link>
-              </li>
-              <li>
-                <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Contact Support
-                </Link>
-              </li>
-              <li>
-                <Link to="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Alumni Portal
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact Info */}
-          <div>
-            <h3 className="font-toboggan-medium text-foreground mb-4">Contact Info</h3>
+            {/* Social Links - Modern Style */}
             <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  Baba Banda Singh Bahadur Engineering College
-                  <br />
-                  Fatehgarh Sahib, Punjab, India
-                </p>
+              <p className="text-sm font-medium text-foreground">
+                Connect With Us
+              </p>
+              <div className="flex gap-3">
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-lg bg-surface border border-border hover:bg-[#1e3a8a] flex items-center justify-center  hover:text-[#ffff] hover:border-accent hover:bg-surface/80 transition-all duration-300"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="h-4 w-4  " />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-lg bg-surface border border-border hover:bg-[#1e3a8a] flex items-center justify-center  hover:text-[#ffff] hover:border-accent hover:bg-surface/80 transition-all duration-300"
+                  aria-label="Twitter"
+                >
+                  <Twitter className="h-4 w-4  " />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-lg bg-surface border border-border hover:bg-[#1e3a8a] flex items-center justify-center  hover:text-[#ffff] hover:border-accent hover:bg-surface/80 transition-all duration-300"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="h-4 w-4  " />
+                </a>
+                <a
+                  href="#"
+                  className="w-10 h-10 rounded-lg bg-surface border border-border hover:bg-[#1e3a8a] flex items-center justify-center  hover:text-[#ffff] hover:border-accent hover:bg-surface/80 transition-all duration-300"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="h-4 w-4  " />
+                </a>
               </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">+91-1763-503000</p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">alumni@bbsbec.ac.in</p>
+            </div>
+          </div>
+
+          {/* Navigation Sections */}
+          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8 lg:gap-12">
+            {/* Quick Links */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground text-sm uppercase tracking-wider">
+                Quick Links
+              </h4>
+              <ul className="space-y-3">
+                <li>
+                  <Link
+                    to="/about"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>About Us</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/alumni-directory"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Alumni Directory</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/events"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Events</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/news"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>News & Updates</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/careers"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Career Opportunities</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Services */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground text-sm uppercase tracking-wider">
+                Services
+              </h4>
+              <ul className="space-y-3">
+                <li>
+                  <Link
+                    to="/give-back"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Donations</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/careers"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Mentorship</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/gallery"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Gallery</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/contact"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Contact Support</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/login"
+                    className=" hover:text-[#0a4d91] transition-colors duration-200 text-sm flex items-center gap-1 group"
+                  >
+                    <span>Alumni Portal</span>
+                    <ArrowUpRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Info */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-foreground text-sm uppercase tracking-wider">
+                Contact
+              </h4>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 group">
+                  <div className="w-8 h-8 rounded-lg bg-surface border border-border hover:bg-[#1e3a8a] flex items-center justify-center flex-shrink-0 group-hover:border-accent transition-colors">
+                    <MapPin className="h-4 w-4    group-hover:text-[#fff] transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-sm  leading-relaxed">
+                      Baba Banda Singh Bahadur Engineering College, Fatehgarh
+                      Sahib, Punjab
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="w-8 h-8 rounded-lg bg-surface border border-border hover:bg-[#1e3a8a] flex items-center justify-center flex-shrink-0 group-hover:border-accent transition-colors">
+                    <Phone className="h-4 w-4    group-hover:text-[#fff] transition-colors" />
+                  </div>
+                  <a
+                    href="tel:+911763503000"
+                    className="text-sm  hover:text-[#0a4d91] transition-colors"
+                  >
+                    +91-1763-503000
+                  </a>
+                </div>
+                <div className="flex items-center gap-3 group">
+                  <div className="w-8 h-8 rounded-lg bg-surface border border-border hover:bg-[#1e3a8a] flex items-center justify-center flex-shrink-0 group-hover:border-accent transition-colors">
+                    <Mail className="h-4 w-4    group-hover:text-[#fff] transition-colors" />
+                  </div>
+                  <a
+                    href="mailto:alumni@bbsbec.ac.in"
+                    className="text-sm  hover:text-[#0a4d91] transition-colors"
+                  >
+                    alumni@bbsbec.ac.in
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="border-t border-border mt-8 pt-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            © 2025 Baba Banda Singh Bahadur Engineering College Alumni Association. All rights reserved.
-          </p>
+      {/* Bottom Bar */}
+      <div className="border-t border-border-subtle bg-background-secondary">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-sm -foreground text-center sm:text-left">
+              © 2025 BBSB Engineering College Alumni Association. All rights
+              reserved.
+            </p>
+            <div className="flex gap-6">
+              <Link
+                to="/privacy"
+                className="text-sm -foreground hover:text-[#0a4d91] transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                to="/terms"
+                className="text-sm -foreground hover:text-[#0a4d91] transition-colors"
+              >
+                Terms of Service
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;

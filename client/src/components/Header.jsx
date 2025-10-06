@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { X, Menu, ChevronDown } from "lucide-react";
 import gsap from "gsap";
+import logoImage from "../assets/Images/images.jpg";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,7 +18,7 @@ export default function Header() {
       label: "About Us", 
       path: "/about"
     },
-    { label: "Alumni Directory", path: "/directory" },
+    { label: "Alumni Directory", path: "/alumni-directory" },
     { label: "Events", path: "/events" },
     { label: "News & Updates", path: "/news" },
     { label: "Gallery", path: "/gallery" },
@@ -67,10 +68,9 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
+    <header className="fixed mb-[50px] top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex justify-between items-center h-16 sm:h-20">
-          {/* Logo */}
           <button
             onClick={() => {
               if (location.pathname === "/") {
@@ -81,7 +81,12 @@ export default function Header() {
             }}
             className="flex items-center"
           >
-            <div className="flex flex-col">
+            <img
+              src={logoImage}
+              alt="BBSBEC Alumni Association Logo"
+              className="h-8 sm:h-10 md:h-12 w-auto object-contain"
+            />
+            <div className="flex flex-col text-left ml-[7px] ">
               <span className="text-[1.3rem] sm:text-[1.4rem] md:text-[1.5rem] font-bold text-[#1e3a8a] leading-tight">
                 BBSBEC
               </span>
@@ -93,7 +98,7 @@ export default function Header() {
 
           {/* Nav Links (Desktop) */}
           <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8">
-            {navLinks.map((item) => (
+            {navLinks.map((item) =>
               item.dropdown ? (
                 <div key={item.label} className="relative group">
                   <button
@@ -104,7 +109,10 @@ export default function Header() {
                     }`}
                   >
                     {item.label}
-                    <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
+                    <ChevronDown
+                      size={16}
+                      className="group-hover:rotate-180 transition-transform"
+                    />
                   </button>
                   <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                     {item.dropdown.map((subItem) => (
@@ -140,7 +148,7 @@ export default function Header() {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`font-medium text-[0.9rem] transition-all ${
+                  className={`font-medium text-[0.9rem] hover:-translate-y-[2px]  transition-all ${
                     isActive(item.path)
                       ? "text-[#1e3a8a]"
                       : "text-gray-700 hover:text-[#1e3a8a]"
@@ -149,7 +157,7 @@ export default function Header() {
                   {item.label}
                 </Link>
               )
-            ))}
+            )}
           </nav>
 
           {/* Login Button (Desktop) */}
