@@ -24,6 +24,7 @@ import EventDetailsPage from "./components/common/EventDetails";
 import ResetPasswordPage from "./pages/alumni/ResetPasswordPage";
 import AlumniEventsPage from "./pages/alumni/Events";
 import EventAttendance from "./pages/alumni/EventAttendance";
+import AlumniDetails from "./pages/admin/AlumniDetails";
 
 
 
@@ -105,6 +106,8 @@ function App() {
           <Route path="events" element={<AdminEvents />} />
           <Route path="alumni" element={<AlumniManagement />} />
           <Route path="events/:id" element={<EventDetailsPage />} />
+          <Route path="alumni/:id" element={<AlumniDetails />} />
+
 
         </Route>
 

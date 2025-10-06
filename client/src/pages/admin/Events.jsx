@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Plus, Calendar, Users, CheckCircle, TrendingUp, BarChart3 } from "lucide-react";
+import { Plus, Calendar, Users, CheckCircle, TrendingUp, BarChart3, ArrowLeft, Download } from "lucide-react";
 import {
   getAllEvents,
   deleteEvent,
@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventFilters from "@/components/admin/event/EventFilters";
 import EventCard from "@/components/admin/event/EventCard";
 import CreateEventDialog from "@/components/admin/event/CreateEventDialog";
-import RegistrationsDialog from "@/components/admin/event/RegistrationsDialog";
+import EventRegistrationsView from "@/components/admin/event/EventRegistrationsView";
 import QRCodeDialog from "@/components/admin/event/QRCodeDialog";
 import DeleteConfirmationDialog from "@/components/admin/event/DeleteConfirmationDialog";
 import Pagination from "@/components/admin/event/Pagination";
@@ -33,19 +33,24 @@ function AdminEvents() {
   const [eventTypeFilter, setEventTypeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // View mode states
+  const [viewMode, setViewMode] = useState("list"); // 'list' or 'registrations'
+  const [selectedEventId, setSelectedEventId] = useState(null);
+
   // Dialog states
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showRegistrationsDialog, setShowRegistrationsDialog] = useState(false);
   const [showQRDialog, setShowQRDialog] = useState(false);
   
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [qrCodeData, setQrCodeData] = useState(null);
 
   useEffect(() => {
-    dispatch(getEventStats());
-    fetchEvents();
-  }, [currentPage, statusFilter, eventTypeFilter]);
+    if (viewMode === "list") {
+      dispatch(getEventStats());
+      fetchEvents();
+    }
+  }, [currentPage, statusFilter, eventTypeFilter, viewMode]);
 
   const fetchEvents = () => {
     const params = { page: currentPage, limit: 10 };
@@ -82,12 +87,15 @@ function AdminEvents() {
     fetchEvents();
   };
 
-
-
   const handleViewRegistrations = (event) => {
-    setSelectedEvent(event);
+    setSelectedEventId(event._id);
     dispatch(getEventRegistrations({ id: event._id, params: {} }));
-    setShowRegistrationsDialog(true);
+    setViewMode("registrations");
+  };
+
+  const handleBackToList = () => {
+    setViewMode("list");
+    setSelectedEventId(null);
   };
 
   const handleGenerateQR = async (event) => {
@@ -128,6 +136,18 @@ function AdminEvents() {
       </CardContent>
     </Card>
   );
+
+  if (viewMode === "registrations") {
+    return (
+      <EventRegistrationsView
+        eventId={selectedEventId}
+        registrations={registrations}
+        isLoading={isLoading}
+        onBack={handleBackToList}
+        onExport={handleExportRegistrations}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 p-6">
@@ -259,15 +279,6 @@ function AdminEvents() {
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
         onSubmit={handleCreateEvent}
-      />
-
-      <RegistrationsDialog
-        event={selectedEvent}
-        registrations={registrations}
-        isLoading={isLoading}
-        open={showRegistrationsDialog}
-        onOpenChange={setShowRegistrationsDialog}
-        onExport={handleExportRegistrations}
       />
 
       <QRCodeDialog

@@ -26,7 +26,7 @@ function EventActionMenu({ event, onViewRegistrations, onGenerateQR, onExport, o
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onViewRegistrations(event)}>
           <Users size={16} className="mr-2" />
-          Registrations ({event.currentAttendees || 0})
+          View Registrations ({event.currentAttendees || 0})
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onGenerateQR(event)}>
