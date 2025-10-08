@@ -1,285 +1,198 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Target, History, Award } from "lucide-react";
+import { Link } from "react-router-dom";
+import { 
+  History, 
+  Target, 
+  Users, 
+  Award,
+  BookOpen,
+  Building2,
+  ChevronRight,
+  Calendar,
+  Shield,
+  Heart
+} from "lucide-react";
+import QuickLinks from "@/components/common/QuickLinks";
 
-export default function AboutPage() {
+const AboutPage = () => {
+  const quickLinks = [
+    { label: "About Us", path: "/about", icon: BookOpen },
+    { label: "Executive Committee", path: "/executive-committee", icon: Users },
+    { label: "Constitution", path: "/constitution", icon: Shield },
+    { label: "Director's Message", path: "/directors-message", icon: Award },
+    { label: "Office of Alumni Affairs", path: "/office-of-alumni-affairs", icon: Building2 },
+  ];
+
+  const milestones = [
+    { year: "1999", event: "BBSBEC Established" },
+    { year: "2013", event: "Alumni Association Founded" },
+    { year: "2015", event: "First Annual Meet" },
+    { year: "2018", event: "Scholarship Program Launched" },
+    { year: "2020", event: "Digital Portal Launch" },
+    { year: "2025", event: "5000+ Active Alumni" },
+  ];
+
+  const values = [
+    {
+      icon: Heart,
+      title: "Community",
+      description: "Building lasting relationships between alumni and their alma mater"
+    },
+    {
+      icon: Target,
+      title: "Excellence",
+      description: "Promoting academic and professional excellence across all fields"
+    },
+    {
+      icon: Users,
+      title: "Collaboration",
+      description: "Fostering meaningful connections and knowledge sharing"
+    },
+    {
+      icon: Award,
+      title: "Recognition",
+      description: "Celebrating achievements and contributions of our alumni"
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#ffffff]">
-      {/* Hero Section */}
-      <section className="py-20 lg:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        </div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-balance mb-6 text-[#1e40af]">
-              About BBSBEC Alumni Association
-            </h1>
-            <p className="text-xl md:text-2xl text-[#64748b] text-balance leading-relaxed">
-              Connecting engineering graduates across generations, fostering
-              lifelong relationships, and supporting Baba Banda Singh Bahadur
-              Engineering College's continued excellence in technical education.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Mission & Vision */}
-      <section className="py-20 bg-[#f9fafb]">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-            <Card className="border border-[#e5e7eb] shadow-lg hover:shadow-xl hover:border-[#0a4d91] transition-all duration-300 bg-white group">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#1e40af] to-[#0a4d91] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Target className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-[#1e40af] text-3xl font-bold">
-                  Our Mission
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-[#64748b] leading-relaxed text-lg">
-                  To strengthen the lifelong connection between Baba Banda Singh
-                  Bahadur Engineering College and its engineering graduates by
-                  fostering meaningful relationships, supporting technical
-                  career development, and encouraging philanthropic engagement
-                  that benefits current and future engineering students.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border border-[#e5e7eb] shadow-lg hover:shadow-xl hover:border-[#0a4d91] transition-all duration-300 bg-white group">
-              <CardHeader className="pb-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#f59e0b] to-[#fbbf24] rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                  <Award className="h-8 w-8 text-white" />
-                </div>
-                <CardTitle className="text-[#1e40af] text-3xl font-bold">
-                  Our Vision
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-[#64748b] leading-relaxed text-lg">
-                  To be the premier engineering alumni network that empowers
-                  graduates to achieve their full potential while contributing
-                  to BBSBEC's legacy of excellence in technical education and
-                  positive impact on society through engineering innovation.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Alumni Committee */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-[#1e40af]">
-              Alumni Committee
-            </h2>
-            <p className="text-[#64748b] max-w-2xl mx-auto text-lg">
-              Our dedicated board of alumni volunteers who guide the
-              association's strategic direction and ensure we serve our
-              community effectively.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {[
-              {
-                name: "Sarah Johnson",
-                // role: "Board President",
-                class: "Class of '95",
-                profession: "CEO, Johnson & Associates",
-                image:
-                  "https://images.unsplash.com/photo-1696453423411-3fc7847a9611?q=80&w=464&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-              },
-              {
-                name: "Robert Chen",
-                // role: "Vice President",
-                class: "Class of '88",
-                profession: "Partner, Chen Law Firm",
-                image:
-                  "https://images.unsplash.com/photo-1686643184179-e4b65e15022e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjR8fGh1bWFuJTIwc29sbyUyMHBvcnRyYWl0c3xlbnwwfHwwfHx8MA%3D%3D",
-              },
-              {
-                name: "Maria Rodriguez",
-                // role: "Secretary",
-                class: "Class of '02",
-                profession: "Director of Operations, Tech Innovations",
-                image:
-                  "https://media.istockphoto.com/id/2183461029/photo/professional-asian-businesswoman-smiling-confidently-with-her-arms-crossed-in-office.jpg?s=1024x1024&w=is&k=20&c=AYEcEoDVP_VKeASevCaynnrbYxIm4ujLjv7bgXRTS60=",
-              },
-              {
-                name: "James Wilson",
-                // role: "Treasurer",
-                class: "Class of '91",
-                profession: "CFO, Wilson Financial Group",
-                image:
-                  "https://images.unsplash.com/photo-1619241805829-34fb64299391?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGh1bWFuJTIwc29sbyUyMHBvcnRyYWl0c3xlbnwwfHwwfHx8MA%3D%3D",
-              },
-              {
-                name: "Dr. Lisa Park",
-                // role: "Events Committee Chair",
-                class: "Class of '99",
-                profession: "Chief Medical Officer, Regional Hospital",
-                image:
-                  "https://plus.unsplash.com/premium_photo-1672857822411-ad82b8180078?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8aHVtYW4lMjBzb2xvJTIwcG9ydHJhaXRzfGVufDB8fDB8fHww",
-              },
-              {
-                name: "Michael Davis",
-                // role: "Fundraising Committee Chair",
-                class: "Class of '85",
-                profession: "Founder, Davis Ventures",
-                image:
-                  "https://images.unsplash.com/photo-1686643184179-e4b65e15022e?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjR8fGh1bWFuJTIwc29sbyUyMHBvcnRyYWl0c3xlbnwwfHwwfHx8MA%3D%3D",
-              },
-            ].map((member, index) => (
-              <Card
-                key={index}
-                className="text-center border border-[#e5e7eb] shadow-lg hover:shadow-2xl hover:border-[#0a4d91] transition-all duration-300 bg-white group overflow-hidden"
-              >
-                <CardHeader>
-                  <div className="w-36 h-36 mx-auto mb-4 rounded-full overflow-hidden border-4 border-[#e5e7eb] group-hover:border-[#0a4d91] transition-all duration-300">
-                    <img
-                      src={member.image || "/placeholder.svg"}
-                      alt={member.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  <CardTitle className="text-[#1e40af] text-xl">
-                    {member.name}
-                  </CardTitle>
-                  <CardDescription className="text-[#64748b] font-medium">
-                    {member.class}
-                  </CardDescription>
-                  {/* <Badge className="mt-3 bg-[#f59e0b] text-white hover:bg-[#d97706] border-none px-4 py-1">
-                    {member.role}
-                  </Badge> */}
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-[#64748b]">{member.profession}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* College History */}
-      <section className="py-20 bg-[#f9fafb]">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center justify-center gap-3 mb-6">
-                {/* <div className="w-12 h-12 bg-gradient-to-br from-[#1e40af] to-[0a4d91] rounded-lg flex items-center justify-center">
-                  <History className="h-6 w-6 text-white" />
-                </div> */}
-                <h2 className="text-4xl md:text-5xl font-bold text-[#1e40af]">
-                  BBSBEC's Engineering Legacy
-                </h2>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white lg:pt-16 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Hero Section */}
+            <div className="mb-12">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="h-1 w-12 bg-gradient-to-r from-[#1e3a8a] to-[#2952b3] rounded-full"></div>
+                <h1 className="text-5xl font-bold text-[#1e3a8a]">About Us</h1>
               </div>
-              <p className="text-[#64748b] text-lg">
-                A proud history of engineering excellence and technical
-                innovation in Punjab.
-              </p>
-            </div>
-
-            <div className="space-y-12">
-              <div className="grid md:grid-cols-2 gap-10 items-center">
-                <div className="bg-white p-8 rounded-2xl shadow-lg border border-[#e5e7eb] hover:border-[#0a4d91] hover:shadow-xl transition-all duration-300">
-                  <h3 className="text-3xl font-bold mb-6 text-[#1e40af]">
-                    Founded in 2007
-                  </h3>
-                  <p className="text-[#64748b] leading-relaxed text-lg">
-                    Baba Banda Singh Bahadur Engineering College was established
-                    with a vision to provide quality technical education in
-                    Punjab. Named after the great Sikh warrior Baba Banda Singh
-                    Bahadur, our college has grown to become a leading
-                    engineering institution in the region.
-                  </p>
-                </div>
-                <div className="rounded-2xl overflow-hidden shadow-lg border border-[#e5e7eb] hover:shadow-xl hover:border-[#0a4d91] transition-all duration-300">
-                  <img
-                    src="https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=886&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt="Historic university building"
-                    className="w-full h-72 object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-10 items-center">
-                <div className="rounded-2xl overflow-hidden shadow-lg border border-[#e5e7eb] hover:shadow-xl hover:border-[#0a4d91] transition-all duration-300 md:order-2">
-                  <img
-                    src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt="Modern university campus"
-                    className="w-full h-72 object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="bg-white p-8 rounded-2xl shadow-lg border border-[#e5e7eb] hover:border-[#0a4d91] hover:shadow-xl transition-all duration-300 md:order-1">
-                  <h3 className="text-3xl font-bold mb-6 text-[#1e40af]">
-                    Engineering Excellence & Growth
-                  </h3>
-                  <p className="text-[#64748b] leading-relaxed text-lg">
-                    Throughout the years, BBSBEC has been at the forefront of
-                    engineering education, research innovation, and industry
-                    collaboration. Today, we serve thousands of engineering
-                    students across multiple disciplines including Computer
-                    Science, Electronics, Mechanical, and Civil Engineering.
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-center bg-white p-12 rounded-2xl shadow-lg border border-[#e5e7eb] mt-16">
-                <h3 className="text-3xl font-bold mb-10 text-[#1e40af]">
-                  Key Milestones
-                </h3>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="text-center p-8 rounded-xl bg-[#f9fafb] border-2 border-[#e5e7eb] hover:bg-[#0a4d91] hover:border-[#0a4d91] transition-all duration-300 group shadow-md hover:shadow-xl">
-                    <div className="text-5xl font-bold text-[#1e40af] mb-3 group-hover:text-white transition-colors">
-                      2007
-                    </div>
-                    <div className="text-sm font-medium text-[#64748b] group-hover:text-white transition-colors">
-                      College Founded
-                    </div>
-                  </div>
-                  <div className="text-center p-8 rounded-xl bg-[#f9fafb] border-2 border-[#e5e7eb] hover:bg-[#0a4d91] hover:border-[#0a4d91] transition-all duration-300 group shadow-md hover:shadow-xl">
-                    <div className="text-5xl font-bold text-[#1e40af] mb-3 group-hover:text-white transition-colors">
-                      2010
-                    </div>
-                    <div className="text-sm font-medium text-[#64748b] group-hover:text-white transition-colors">
-                      First Batch Graduated
-                    </div>
-                  </div>
-                  <div className="text-center p-8 rounded-xl bg-[#f9fafb] border-2 border-[#e5e7eb] hover:bg-[#0a4d91] hover:border-[#0a4d91] transition-all duration-300 group shadow-md hover:shadow-xl">
-                    <div className="text-5xl font-bold text-[#1e40af] mb-3 group-hover:text-white transition-colors">
-                      2015
-                    </div>
-                    <div className="text-sm font-medium text-[#64748b] group-hover:text-white transition-colors">
-                      Research Center Established
-                    </div>
-                  </div>
-                  <div className="text-center p-8 rounded-xl bg-[#f9fafb] border-2 border-[#e5e7eb] hover:bg-[#0a4d91] hover:border-[#0a4d91] transition-all duration-300 group shadow-md hover:shadow-xl">
-                    <div className="text-5xl font-bold text-[#1e40af] mb-3 group-hover:text-white transition-colors">
-                      2020
-                    </div>
-                    <div className="text-sm font-medium text-[#64748b] group-hover:text-white transition-colors">
-                      Industry Partnerships
-                    </div>
-                  </div>
+              
+              <div className="relative h-[400px] rounded-3xl overflow-hidden shadow-xl mb-8">
+                <img
+                  src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&q=80"
+                  alt="BBSBEC Campus"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+                  <h2 className="text-3xl font-bold mb-2">Connecting Engineers, Building Futures</h2>
+                  <p className="text-white/90 text-lg">Since 2013</p>
                 </div>
               </div>
             </div>
+
+            {/* Main Content Card */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-10 mb-8">
+              <div className="prose prose-lg max-w-none">
+                <p className="text-gray-700 leading-relaxed mb-6">
+                  The <span className="font-semibold text-[#1e3a8a]">BBSBEC Alumni Association</span> was founded on{" "}
+                  <span className="font-semibold text-[#1e3a8a]">1st February 2013</span>. The Association aims to
+                  encourage the Alumni to take abiding interest in the progress and development of the Institute. Since its
+                  establishment, the Association has grown from strength to strength, regularly undertaking several
+                  initiatives to promote and foster mutually beneficial interaction between the Alumni and the Alma Mater.
+                </p>
+
+                <p className="text-gray-700 leading-relaxed mb-6">
+                  BBSBEC Alumni Association has been registered as a Society under the Societies Registration{" "}
+                  <span className="font-semibold text-[#1e3a8a]">Act 1860</span>.
+                </p>
+
+                <div className="bg-gradient-to-br from-[#1e3a8a]/5 to-[#2952b3]/5 rounded-2xl p-6 border-l-4 border-[#1e3a8a] my-8">
+                  <h3 className="text-2xl font-bold text-[#1e3a8a] mb-3 flex items-center gap-3">
+                    <Target className="h-7 w-7 text-[#f59e0b]" />
+                    Our Mission
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    To create a vibrant, engaged alumni community that supports current students, contributes to the
+                    institution's growth, and maintains lifelong connections among graduates while promoting professional
+                    development and social responsibility.
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-[#f59e0b]/5 to-[#ea580c]/5 rounded-2xl p-6 border-l-4 border-[#f59e0b] my-8">
+                  <h3 className="text-2xl font-bold text-[#1e3a8a] mb-3 flex items-center gap-3">
+                    <History className="h-7 w-7 text-[#f59e0b]" />
+                    Our Vision
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    To be recognized as one of the most dynamic and influential alumni associations in India, fostering
+                    innovation, excellence, and meaningful connections that transform lives and strengthen our engineering
+                    community globally.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Core Values */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-10 mb-8">
+              <h2 className="text-3xl font-bold text-[#1e3a8a] mb-8 flex items-center gap-3">
+                <Award className="h-8 w-8 text-[#f59e0b]" />
+                Our Core Values
+              </h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                {values.map((value, index) => {
+                  const Icon = value.icon;
+                  return (
+                    <div
+                      key={index}
+                      className="group p-6 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 hover:border-[#1e3a8a]/30 hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-14 h-14 bg-gradient-to-br from-[#1e3a8a] to-[#2952b3] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <Icon className="h-7 w-7 text-white" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#1e3a8a] transition-colors">
+                            {value.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm leading-relaxed">
+                            {value.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 md:p-10">
+              <h2 className="text-3xl font-bold text-[#1e3a8a] mb-8 flex items-center gap-3">
+                <Calendar className="h-8 w-8 text-[#f59e0b]" />
+                Our Journey
+              </h2>
+              <div className="space-y-6">
+                {milestones.map((milestone, index) => (
+                  <div key={index} className="flex gap-6 group">
+                    <div className="flex flex-col items-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#1e3a8a] to-[#2952b3] rounded-xl flex items-center justify-center text-white font-bold group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                        {milestone.year}
+                      </div>
+                      {index !== milestones.length - 1 && (
+                        <div className="w-1 h-full bg-gradient-to-b from-[#1e3a8a] to-gray-200 rounded-full mt-2"></div>
+                      )}
+                    </div>
+                    <div className="flex-1 pb-8">
+                      <div className="bg-gradient-to-r from-gray-50 to-white p-6 rounded-2xl border border-gray-100 group-hover:border-[#1e3a8a]/30 group-hover:shadow-md transition-all duration-300">
+                        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-[#1e3a8a] transition-colors">
+                          {milestone.event}
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
+
+<QuickLinks quickLinks={quickLinks}/>
         </div>
-      </section>
+      </div>
     </div>
   );
-}
+};
+
+export default AboutPage;

@@ -8,7 +8,7 @@ function PublicLayout() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <Header />
-      <main className="flex-grow mt-16 sm:mt-20">
+      <main className="flex-grow mt-20 sm:mt-32">
         <Outlet />
       </main>
       <Footer />

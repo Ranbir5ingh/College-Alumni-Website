@@ -1,8 +1,6 @@
 // components/layouts/AlumniLayout.jsx
-import { Outlet } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-
 import { 
   LayoutDashboard, 
   User, 
@@ -15,6 +13,20 @@ import {
   LogOut 
 } from "lucide-react";
 import { logoutAlumni } from "@/store/auth-slice";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 function AlumniLayout() {
   const dispatch = useDispatch();
@@ -39,78 +51,100 @@ function AlumniLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-lg fixed h-full overflow-y-auto">
-        <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold text-blue-600">Alumni Portal</h2>
-          {user && (
-            <p className="text-sm text-gray-600 mt-2">
-              Welcome, {user.name || user.email}
-            </p>
-          )}
-        </div>
-        
-        <nav className="p-4">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-                  isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                <Icon size={20} />
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <Sidebar collapsible="icon">
+          <SidebarHeader className="border-b">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="lg" asChild>
+                  <Link to="/alumni/dashboard">
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white">
+                      <LayoutDashboard className="size-4" />
+                    </div>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-semibold">Alumni Portal</span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {user?.name || user?.email}
+                      </span>
+                    </div>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarHeader>
 
-      {/* Main Content */}
-      <div className="flex-1 ml-64">
-        {/* Top Header */}
-        <header className="bg-white shadow-sm sticky top-0 z-10">
-          <div className="px-6 py-4 flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-gray-800">
-              {menuItems.find((item) => item.path === location.pathname)?.label || "Alumni Portal"}
-            </h1>
-            
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                {user?.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <LogOut size={18} />
-                <span>Logout</span>
-              </button>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {menuItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path;
+                    
+                    return (
+                      <SidebarMenuItem key={item.path}>
+                        <SidebarMenuButton asChild isActive={isActive} tooltip={item.label} className="py-6">
+                          <Link to={item.path}>
+                            <Icon />
+                            <span className="font-medium text-sm">{item.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+
+          <SidebarFooter className="border-t">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={handleLogout} 
+                  tooltip="Logout"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <LogOut />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </Sidebar>
+
+        <div className="flex-1 flex flex-col">
+          <header className="bg-white shadow-sm sticky top-0 z-10 border-b">
+            <div className="px-6 py-4 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger />
+                <h1 className="text-xl font-semibold text-gray-800">
+                  {menuItems.find((item) => item.path === location.pathname)?.label || "Alumni Portal"}
+                </h1>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">
+                  {user?.email}
+                </span>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Page Content */}
-        <main className="p-6">
-          <Outlet />
-        </main>
+          <main className="flex-1 p-6 bg-gray-50">
+            <Outlet />
+          </main>
 
-        {/* Footer */}
-        <footer className="bg-white border-t mt-auto">
-          <div className="px-6 py-4 text-center text-sm text-gray-600">
-            © {new Date().getFullYear()} Alumni Association. All rights reserved.
-          </div>
-        </footer>
+          <footer className="bg-white border-t mt-auto">
+            <div className="px-6 py-4 text-center text-sm text-gray-600">
+              © {new Date().getFullYear()} Alumni Association. All rights reserved.
+            </div>
+          </footer>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
 

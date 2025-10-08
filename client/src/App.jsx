@@ -25,6 +25,13 @@ import ResetPasswordPage from "./pages/alumni/ResetPasswordPage";
 import AlumniEventsPage from "./pages/alumni/Events";
 import EventAttendance from "./pages/alumni/EventAttendance";
 import AlumniDetails from "./pages/admin/AlumniDetails";
+import ExecutiveCommitteePage from "./pages/public/ExecutiveCommittee";
+import ConstitutionPage from "./pages/public/Constitution";
+import DirectorMessagePage from "./pages/public/DirectorMessage";
+import OfficeOfAlumniAffairsPage from "./pages/public/OfficeOfAlumniAffairs";
+import HangoutAlumniPage from "./pages/public/HangoutAlumni";
+import BookDonationPage from "./pages/public/BookDonation";
+import ContributePage from "./pages/public/Contribute";
 
 
 
@@ -61,6 +68,14 @@ function App() {
         >
           <Route index element={<HomePage />} />
           <Route path="about" element={<About />} />
+          <Route path="executive-committee" element={<ExecutiveCommitteePage />} />
+          <Route path="constitution" element={<ConstitutionPage />} />
+          <Route path="directors-message" element={<DirectorMessagePage />} />
+          <Route path="office-of-alumni-affairs" element={<OfficeOfAlumniAffairsPage />} />
+          <Route path="hangout-with-alumni" element={<HangoutAlumniPage />} />
+          <Route path="book-donation" element={<BookDonationPage />} />
+          <Route path="contribute" element={<ContributePage />} />
+
           <Route path="contact" element={<ContactPage />} />
           <Route path="auth" element={<AuthPage />} />
           <Route path="directory" element={<AlumniDirectory />} />
