@@ -47,7 +47,7 @@ function AlumniLayout() {
     { path: "/alumni/news", icon: Newspaper, label: "News" },
     { path: "/alumni/gallery", icon: Image, label: "Gallery" },
     { path: "/alumni/careers", icon: Briefcase, label: "Careers" },
-    { path: "/alumni/giveback", icon: Heart, label: "Give Back" },
+    { path: "/alumni/donate", icon: Heart, label: "Donate" },
   ];
 
   return (

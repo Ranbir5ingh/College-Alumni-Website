@@ -3,7 +3,6 @@ const User = require("../../models/User");
 const Event = require("../../models/Event");
 const EventRegistration = require("../../models/EventRegistration");
 const Donation = require("../../models/Donation");
-const DonationCampaign = require("../../models/DonationCampaign");
 
 // Get my dashboard data
 const getMyDashboard = async (req, res) => {
@@ -67,7 +66,6 @@ const getMyDashboard = async (req, res) => {
 
     // Get recent donations
     const recentDonations = await Donation.find({ alumniId: id })
-      .populate('donationCampaignId', 'title description')
       .sort({ donationDate: -1 })
       .limit(3)
       .lean();
@@ -116,9 +114,9 @@ const getMyDashboard = async (req, res) => {
           currentCompany: userObj.currentCompany,
           currentDesignation: userObj.currentDesignation,
           accountStatus: userObj.accountStatus,
-          isVerified: userObj.isVerified, // Virtual
-          isProfileComplete: userObj.isProfileComplete, // Virtual
-          fullName: userObj.fullName, // Virtual
+          isVerified: userObj.isVerified,
+          isProfileComplete: userObj.isProfileComplete,
+          fullName: userObj.fullName,
         },
         stats,
         upcomingEvents,
@@ -243,20 +241,24 @@ const getMyEvents = async (req, res) => {
 const getMyDonations = async (req, res) => {
   try {
     const { id } = req.user;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, category } = req.query;
 
-    const donations = await Donation.find({ alumniId: id })
-      .populate('donationCampaignId', 'title description goalAmount')
+    const filter = { alumniId: id };
+    if (category) {
+      filter.category = category;
+    }
+
+    const donations = await Donation.find(filter)
       .sort({ donationDate: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .lean();
 
-    const totalDonations = await Donation.countDocuments({ alumniId: id });
+    const totalDonations = await Donation.countDocuments(filter);
 
     // Calculate total amount - convert id string to ObjectId
     const mongoose = require('mongoose');
-    const totalAmount = await Donation.aggregate([
+    const totalAmountResult = await Donation.aggregate([
       {
         $match: { 
           alumniId: new mongoose.Types.ObjectId(id),
@@ -271,10 +273,28 @@ const getMyDonations = async (req, res) => {
       }
     ]);
 
+    // Get category-wise breakdown
+    const categoryBreakdown = await Donation.aggregate([
+      {
+        $match: { 
+          alumniId: new mongoose.Types.ObjectId(id),
+          paymentStatus: 'completed'
+        }
+      },
+      {
+        $group: {
+          _id: '$category',
+          total: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
     res.status(200).json({
       success: true,
       data: donations,
-      totalAmount: totalAmount.length > 0 ? totalAmount[0].total : 0,
+      totalAmount: totalAmountResult.length > 0 ? totalAmountResult[0].total : 0,
+      categoryBreakdown,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalDonations / limit),

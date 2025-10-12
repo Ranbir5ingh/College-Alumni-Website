@@ -9,9 +9,7 @@ import ProfilePage from "./pages/alumni/ProfilePage";
 import About from "./pages/public/About";
 import AlumniDirectory from "./pages/alumni/AlumniDirectory";
 import News from "./pages/alumni/News";
-import Gallery from "./pages/alumni/Gallery";
 import Careers from "./pages/alumni/Careers";
-import GiveBack from "./pages/alumni/GiveBack";
 import ContactPage from "./pages/public/Contact";
 import CheckAuth from "./components/common/CheckAuth";
 import AlumniLayout from "./components/layouts/layouts/AlumniLayout";
@@ -32,6 +30,16 @@ import OfficeOfAlumniAffairsPage from "./pages/public/OfficeOfAlumniAffairs";
 import HangoutAlumniPage from "./pages/public/HangoutAlumni";
 import BookDonationPage from "./pages/public/BookDonation";
 import ContributePage from "./pages/public/Contribute";
+import AlumniDonationPage from "./pages/alumni/DonationPage";
+import DonationPage from "./pages/admin/DonationPage";
+import NewsManagementPage from "./pages/admin/News";
+import NewsFormPage from "./pages/admin/CreateNews";
+import NewsDetailPage from "./components/common/NewsDetails";
+import DonateNewPage from "./pages/alumni/DonateNew";
+import AdminMembershipPage from "./pages/admin/AdminMembershipPage";
+import AlumniMembershipPage from "./pages/alumni/AlumniMembershipPage";
+import AdminGalleryPage from "./pages/admin/AdminGallery";
+import AlumniGalleryPage from "./pages/alumni/AlumniGalleryPage";
 
 
 
@@ -81,9 +89,9 @@ function App() {
           <Route path="directory" element={<AlumniDirectory />} />
           <Route path="events" element={<AlumniEventsPage />} />
           <Route path="news" element={<News />} />
-          <Route path="gallery" element={<Gallery />} />
+          <Route path="gallery" element={<AlumniGalleryPage />} />
           <Route path="careers" element={<Careers />} />
-          <Route path="giveback" element={<GiveBack />} />
+          <Route path="giveback" element={<DonationPage />} />
           
         </Route>
 
@@ -101,9 +109,12 @@ function App() {
           <Route path="directory" element={<AlumniDirectory />} />
           <Route path="events" element={<AlumniEventsPage />} />
           <Route path="news" element={<News />} />
-          <Route path="gallery" element={<Gallery />} />
+          <Route path="news/:slug" element={<NewsDetailPage />} />
+          <Route path="gallery" element={<AlumniGalleryPage />} />
           <Route path="careers" element={<Careers />} />
-          <Route path="giveback" element={<GiveBack />} />
+          <Route path="donate" element={<AlumniDonationPage />} />
+          <Route path="membership" element={<AlumniMembershipPage />} />
+          <Route path="donate/new" element={<DonateNewPage />} />
           <Route path="events/:id" element={<EventDetailsPage />} />
   
           
@@ -120,8 +131,14 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="events" element={<AdminEvents />} />
           <Route path="alumni" element={<AlumniManagement />} />
+          <Route path="news" element={<NewsManagementPage />} />
+          <Route path="news/:id" element={<NewsDetailPage />} />
+          <Route path="news/create" element={<NewsFormPage />} />
           <Route path="events/:id" element={<EventDetailsPage />} />
           <Route path="alumni/:id" element={<AlumniDetails />} />
+          <Route path="donations" element={<DonationPage />} />
+          <Route path="membership" element={<AdminMembershipPage />} />
+          <Route path="gallery" element={<AdminGalleryPage />} />
 
 
         </Route>

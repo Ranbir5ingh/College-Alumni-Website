@@ -1,5 +1,24 @@
 const mongoose = require("mongoose");
 
+// Define donation categories as constants
+const DONATION_CATEGORIES = [
+  "infrastructure_development",
+  "student_scholarship",
+  "faculty_development",
+  "research_grants",
+  "sports_facilities",
+  "library_resources",
+  "laboratory_equipment",
+  "emergency_relief_fund",
+  "alumni_activities",
+  "general_fund",
+  "hostel_facilities",
+  "cultural_activities",
+  "placement_cell",
+  "innovation_hub",
+  "green_campus_initiative"
+];
+
 const DonationSchema = new mongoose.Schema(
   {
     alumniId: {
@@ -7,11 +26,14 @@ const DonationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    donationCampaignId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "DonationCampaign",
+    
+    // Donation category (replaces campaign)
+    category: {
+      type: String,
+      enum: DONATION_CATEGORIES,
       required: true,
     },
+    
     // Donation details
     amount: {
       type: Number,
@@ -26,6 +48,7 @@ const DonationSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    
     // Payment details
     transactionId: {
       type: String,
@@ -42,6 +65,7 @@ const DonationSchema = new mongoose.Schema(
       enum: ["pending", "completed", "failed", "refunded"],
       default: "pending",
     },
+    
     // Donor information (can override from User model for anonymity)
     donorName: {
       type: String,
@@ -56,6 +80,7 @@ const DonationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    
     // Tax details
     panNumber: {
       type: String,
@@ -73,6 +98,7 @@ const DonationSchema = new mongoose.Schema(
     receiptGeneratedAt: {
       type: Date,
     },
+    
     // 80G certificate for tax exemption
     taxCertificateGenerated: {
       type: Boolean,
@@ -84,12 +110,14 @@ const DonationSchema = new mongoose.Schema(
     taxCertificateGeneratedAt: {
       type: Date,
     },
+    
     // Donation type
     donationType: {
       type: String,
       enum: ["one_time", "recurring"],
       default: "one_time",
     },
+    
     // For recurring donations
     recurringDetails: {
       frequency: {
@@ -100,6 +128,7 @@ const DonationSchema = new mongoose.Schema(
       endDate: Date,
       isActive: Boolean,
     },
+    
     // Message/dedication
     message: {
       type: String,
@@ -108,6 +137,7 @@ const DonationSchema = new mongoose.Schema(
     dedicatedTo: {
       type: String,
     },
+    
     // Acknowledgment
     acknowledgmentSent: {
       type: Boolean,
@@ -116,6 +146,7 @@ const DonationSchema = new mongoose.Schema(
     acknowledgmentSentAt: {
       type: Date,
     },
+    
     // Thank you email tracking
     thankYouEmailSent: {
       type: Boolean,
@@ -124,12 +155,14 @@ const DonationSchema = new mongoose.Schema(
     thankYouEmailSentAt: {
       type: Date,
     },
+    
     // Status
     status: {
       type: String,
       enum: ["pending", "completed", "cancelled", "refunded"],
       default: "pending",
     },
+    
     // Refund details
     refundedAt: {
       type: Date,
@@ -140,7 +173,8 @@ const DonationSchema = new mongoose.Schema(
     refundAmount: {
       type: Number,
     },
-    // Notes
+    
+    // Notes (admin only)
     notes: {
       type: String,
     },
@@ -166,9 +200,9 @@ DonationSchema.pre('save', function(next) {
 });
 
 // Indexes
-DonationSchema.index({ alumniId: 1, donationCampaignId: 1 });
+DonationSchema.index({ alumniId: 1, category: 1 });
 DonationSchema.index({ alumniId: 1, status: 1 });
-DonationSchema.index({ donationCampaignId: 1, status: 1 });
+DonationSchema.index({ category: 1, status: 1 });
 DonationSchema.index({ donationDate: -1 });
 DonationSchema.index({ status: 1 });
 DonationSchema.index({ transactionId: 1 });

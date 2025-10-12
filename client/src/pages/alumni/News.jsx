@@ -1,269 +1,354 @@
-import { Search, Calendar, User, ArrowRight, Clock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import {
+  getAllPublishedNews,
+  getPinnedNews,
+  getCategories,
+  getTags,
+  clearError,
+} from '@/store/user/news-slice';
+import { Search, Calendar, Eye, Tag, Pin, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const newsArticles = [
-  {
-    id: 1,
-    title: "Alumni Startup Raises $50M in Series B Funding",
-    excerpt:
-      "TechVenture, founded by Class of 2015 graduate Sarah Kim, secures major funding round to expand AI-powered solutions.",
-    content:
-      "In a significant milestone for our alumni community, TechVenture, the innovative AI startup founded by Sarah Kim (Class of 2015), has successfully raised $50 million in Series B funding...",
-    author: "Alumni Relations Team",
-    publishDate: "2024-01-15",
-    category: "Alumni Success",
-    readTime: "3 min read",
-    image: "/startup-funding-announcement.jpg",
-    featured: true,
-  },
-  {
-    id: 2,
-    title: "New Scholarship Program Launches with $2M Endowment",
-    excerpt:
-      "Thanks to generous alumni donations, the university announces a new scholarship program supporting underrepresented students in STEM fields.",
-    content:
-      "We are thrilled to announce the launch of the Alumni Excellence Scholarship Program, made possible by the generous contributions of our alumni community...",
-    author: "Development Office",
-    publishDate: "2024-01-12",
-    category: "University News",
-    readTime: "4 min read",
-    image: "/scholarship-celebration-ceremony.jpg",
-    featured: true,
-  },
-  {
-    id: 3,
-    title: "Class of 2010 Reunion Planning Committee Formed",
-    excerpt:
-      "Volunteers needed for the upcoming 15-year reunion celebration. Join the planning committee to help create an unforgettable event.",
-    content:
-      "The Class of 2010 is gearing up for their 15-year reunion, and we're looking for enthusiastic volunteers to join the planning committee...",
-    author: "Reunion Committee",
-    publishDate: "2024-01-10",
-    category: "Events",
-    readTime: "2 min read",
-    image: "/class-reunion-planning-meeting.jpg",
-    featured: false,
-  },
-  {
-    id: 4,
-    title: "Alumni Mentorship Program Expands Globally",
-    excerpt:
-      "The successful mentorship program now includes international alumni, connecting students with mentors across six continents.",
-    content:
-      "Building on the tremendous success of our alumni mentorship program, we're excited to announce its global expansion...",
-    author: "Career Services",
-    publishDate: "2024-01-08",
-    category: "Programs",
-    readTime: "3 min read",
-    image: "/mentorship-meeting.png",
-    featured: false,
-  },
-  {
-    id: 5,
-    title: "Record-Breaking Fundraising Campaign Concludes",
-    excerpt:
-      "The 'Building Tomorrow' campaign exceeds its $10M goal, raising $12.5M for campus improvements and student support.",
-    content:
-      "We are proud to announce that our 'Building Tomorrow' fundraising campaign has concluded with unprecedented success...",
-    author: "Fundraising Team",
-    publishDate: "2024-01-05",
-    category: "Fundraising",
-    readTime: "4 min read",
-    image: "/fundraising-campaign-success.jpg",
-    featured: false,
-  },
-  {
-    id: 6,
-    title: "Distinguished Alumni Awards 2024 Recipients Announced",
-    excerpt:
-      "Five outstanding alumni recognized for their professional achievements and contributions to society at the annual awards ceremony.",
-    content: "The Alumni Association is pleased to announce the recipients of the 2024 Distinguished Alumni Awards...",
-    author: "Awards Committee",
-    publishDate: "2024-01-03",
-    category: "Awards",
-    readTime: "5 min read",
-    image: "/awards-ceremony-recognition.jpg",
-    featured: false,
-  },
-]
+const NewsPage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const { newsList, pinnedNews, categories, tags, pagination, isLoading, error } = useSelector(
+    (state) => state.userNews
+  );
 
-const categories = ["All", "Alumni Success", "University News", "Events", "Programs", "Fundraising", "Awards"]
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '');
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page')) || 1);
 
-export default function News() {
-  const featuredArticles = newsArticles.filter((article) => article.featured)
-  const regularArticles = newsArticles.filter((article) => !article.featured)
+  useEffect(() => {
+    dispatch(getPinnedNews());
+    dispatch(getCategories());
+    dispatch(getTags());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const params = {
+      page: currentPage,
+      limit: 9,
+    };
+    
+    if (searchTerm) params.search = searchTerm;
+    if (selectedCategory) params.category = selectedCategory;
+    if (selectedTag) params.tag = selectedTag;
+
+    dispatch(getAllPublishedNews(params));
+    
+    // Update URL params
+    const newParams = {};
+    if (searchTerm) newParams.search = searchTerm;
+    if (selectedCategory) newParams.category = selectedCategory;
+    if (selectedTag) newParams.tag = selectedTag;
+    if (currentPage > 1) newParams.page = currentPage;
+    setSearchParams(newParams);
+  }, [dispatch, currentPage, searchTerm, selectedCategory, selectedTag]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category === selectedCategory ? '' : category);
+    setCurrentPage(1);
+  };
+
+  const handleTagClick = (tag) => {
+    setSelectedTag(tag === selectedTag ? '' : tag);
+    setCurrentPage(1);
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('');
+    setSelectedTag('');
+    setCurrentPage(1);
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  if (isLoading && newsList.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading news...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-primary/5 to-background py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">News & Updates</h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Stay connected with the latest news from our alumni community, university updates, and stories of success
-              from graduates around the world.
-            </p>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-bold mb-4">Alumni News & Updates</h1>
+          <p className="text-blue-100 text-lg">Stay connected with the latest happenings</p>
         </div>
-      </section>
+      </div>
 
-      {/* Search and Filter Section */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="bg-card rounded-lg border p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative md:col-span-2">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search news articles..." className="pl-10" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Pinned News */}
+        {pinnedNews.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Pin className="w-6 h-6 text-yellow-500" />
+              Featured News
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pinnedNews.slice(0, 3).map((news) => (
+                <div
+                  key={news._id}
+                  onClick={() => navigate(`/alumni/news/${news.slug}`)}
+                  className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-shadow border-2 border-yellow-400"
+                >
+                  {news.coverImage && (
+                    <img
+                      src={news.coverImage}
+                      alt={news.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  )}
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className="px-3 py-1 rounded-full text-xs font-semibold text-white"
+                        style={{ backgroundColor: news?.categoryInfo?.color }}
+                      >
+                        {news?.categoryInfo?.label}
+                      </span>
+                      <Pin className="w-4 h-4 text-yellow-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
+                      {news.title} 
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                      {news.excerpt}
+                    </p>
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(news.publishedAt)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar */}
+          <div className="lg:w-64 flex-shrink-0">
+            {/* Search */}
+            <div className="bg-white rounded-lg shadow p-4 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Search</h3>
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search news..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                </div>
+              </form>
+            </div>
+
+            {/* Categories */}
+            <div className="bg-white rounded-lg shadow p-4 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-3">Categories</h3>
+              <div className="space-y-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat.category}
+                    onClick={() => handleCategoryChange(cat.category)}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                      selectedCategory === cat.category
+                        ? 'bg-blue-100 text-blue-700 font-semibold'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <span>{cat?.categoryInfo?.label}</span>
+                      <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full">
+                        {cat.count}
+                      </span>
+                    </div>
+                  </button>
+                ))}
               </div>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category.toLowerCase()}>
-                      {category}
-                    </SelectItem>
+            </div>
+
+            {/* Tags */}
+            <div className="bg-white rounded-lg shadow p-4">
+              <h3 className="font-semibold text-gray-900 mb-3">Popular Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {tags.slice(0, 15).map((tagItem) => (
+                  <button
+                    key={tagItem.tag}
+                    onClick={() => handleTagClick(tagItem.tag)}
+                    className={`px-3 py-1 rounded-full text-xs transition-colors ${
+                      selectedTag === tagItem.tag
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {tagItem.tag} ({tagItem.count})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {(searchTerm || selectedCategory || selectedTag) && (
+              <button
+                onClick={clearFilters}
+                className="w-full mt-4 bg-red-50 text-red-600 py-2 px-4 rounded-lg hover:bg-red-100 transition-colors text-sm font-medium"
+              >
+                Clear All Filters
+              </button>
+            )}
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                {error}
+              </div>
+            )}
+
+            {newsList.length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-12 text-center">
+                <p className="text-gray-500 text-lg">No news found matching your filters.</p>
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {newsList.map((news) => (
+                    <div
+                      key={news._id}
+                      onClick={() => navigate(`/alumni/news/${news.slug}`)}
+                      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-xl transition-shadow"
+                    >
+                      {news.coverImage && (
+                        <img
+                          src={news.coverImage}
+                          alt={news.title}
+                          className="w-full h-48 object-cover"
+                        />
+                      )}
+                      <div className="p-5">
+                        <span
+                          className="px-3 py-1 rounded-full text-xs font-semibold text-white"
+                          style={{ backgroundColor: news?.categoryInfo?.color }}
+                        >
+                          {news?.categoryInfo?.label}
+                        </span>
+                        <h3 className="text-xl font-bold text-gray-900 mt-3 mb-2 line-clamp-2">
+                          {news.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+                          {news.excerpt}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(news.publishedAt)}
+                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                              <Eye className="w-3 h-3" />
+                              {news.viewCount}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Articles */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Featured Stories</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {featuredArticles.map((article) => (
-              <Card key={article.id} className="hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={article.image || "/placeholder.svg"}
-                    alt={article.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
                 </div>
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="default">{article.category}</Badge>
-                    <Badge variant="outline">Featured</Badge>
-                  </div>
-                  <CardTitle className="text-xl hover:text-primary transition-colors">{article.title}</CardTitle>
-                  <p className="text-muted-foreground">{article.excerpt}</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span>{article.author}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(article.publishDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{article.readTime}</span>
-                      </div>
+
+                {/* Pagination */}
+                {pagination.totalPages > 1 && (
+                  <div className="mt-8 flex justify-center items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage((prev) => prev - 1)}
+                      disabled={!pagination.hasPrevPage}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Previous
+                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                        .filter(page => {
+                          return page === 1 || 
+                                 page === pagination.totalPages || 
+                                 Math.abs(page - currentPage) <= 1;
+                        })
+                        .map((page, index, array) => (
+                          <React.Fragment key={page}>
+                            {index > 0 && array[index - 1] !== page - 1 && (
+                              <span className="px-2 text-gray-400">...</span>
+                            )}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`px-4 py-2 rounded-lg ${
+                                currentPage === page
+                                  ? 'bg-blue-600 text-white'
+                                  : 'border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        ))}
                     </div>
+
+                    <button
+                      onClick={() => setCurrentPage((prev) => prev + 1)}
+                      disabled={!pagination.hasNextPage}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      Next
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                  <Button variant="outline" className="w-full bg-transparent">
-                    Read Full Article
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                )}
+              </>
+            )}
           </div>
         </div>
-      </section>
-
-      {/* Regular Articles */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Latest News</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {regularArticles.map((article) => (
-              <Card key={article.id} className="hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-                <div className="aspect-video overflow-hidden">
-                  <img
-                    src={article.image || "/placeholder.svg"}
-                    alt={article.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <CardHeader>
-                  <Badge variant="secondary" className="w-fit mb-2">
-                    {article.category}
-                  </Badge>
-                  <CardTitle className="text-lg hover:text-primary transition-colors line-clamp-2">
-                    {article.title}
-                  </CardTitle>
-                  <p className="text-muted-foreground text-sm line-clamp-3">{article.excerpt}</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
-                    <div className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      <span>{article.author}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{new Date(article.publishDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>{article.readTime}</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" className="w-full bg-transparent">
-                    Read More
-                    <ArrowRight className="ml-2 h-3 w-3" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Load More Button */}
-          <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Load More Articles
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter Signup */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-4">Stay Updated</h2>
-            <p className="text-muted-foreground mb-8">
-              Subscribe to our newsletter to receive the latest alumni news, event announcements, and success stories
-              directly in your inbox.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <Input type="email" placeholder="Enter your email address" className="flex-1" />
-              <Button>
-                Subscribe
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-4">We respect your privacy. Unsubscribe at any time.</p>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default NewsPage;

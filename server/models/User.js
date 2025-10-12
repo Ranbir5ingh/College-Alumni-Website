@@ -192,26 +192,27 @@ const UserSchema = new mongoose.Schema(
 
     // Membership tracking (current active membership)
     currentMembership: {
-      membershipId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Membership",
-      },
-      startDate: Date,
-      expiryDate: Date,
-      status: {
-        type: String,
-        enum: ["active", "expired", "cancelled"],
-      },
-      transactionId: String,
-    },
+  membershipId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MembershipPurchase",
+  },
+  startDate: Date,
+  expiryDate: Date,
+  status: {
+    type: String,
+    enum: ["active", "expired", "cancelled"],
+  },
+  transactionId: String,
+},
+
 
     // References to track relationships
     membershipHistory: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "MembershipPurchase",
-      },
-    ],
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MembershipPurchase",
+  },
+],
 
     eventRegistrations: [
       {
@@ -300,7 +301,7 @@ UserSchema.pre("save", function (next) {
   }
 
   // Auto-update membership status if expired
-  if (this.currentMembership && this.currentMembership.expiryDate) {
+   if (this.currentMembership && this.currentMembership.expiryDate) {
     if (
       new Date(this.currentMembership.expiryDate) < new Date() &&
       this.currentMembership.status === "active"
