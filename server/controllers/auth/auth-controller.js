@@ -56,7 +56,7 @@ const registerUser = async (req, res) => {
       email,
       password: hashPassword,
       enrollmentNumber,
-      batch: `${yearOfJoining}-${yearOfPassing}`,
+      batch: yearOfJoining,
       yearOfJoining,
       yearOfPassing,
       department,

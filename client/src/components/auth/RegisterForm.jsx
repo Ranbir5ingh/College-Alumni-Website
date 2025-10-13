@@ -255,7 +255,7 @@ function RegisterForm() {
                   <SelectValue placeholder="Select Department" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Computer Science">Computer Science</SelectItem>
+                  <SelectItem value="Computer Science & Engineering">Computer Science & Engineering</SelectItem>
                   <SelectItem value="Electronics & Communication">
                     Electronics & Communication
                   </SelectItem>
